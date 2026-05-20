@@ -1,17 +1,17 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/server";
-import { list } from "@/lib/nocodb/client";
 import { AppShell } from "@/components/app/AppShell";
 import { ClienteNav } from "@/components/app/ClienteNav";
 import { FileText, Play } from "lucide-react";
 import { BodyMuscles, muscleLabels } from "@/components/brand/BodyMuscles";
 import { parseCsv } from "@/lib/utils";
+import { safeList } from "@/lib/safe";
 
 const WD_FULL = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
 export default async function MeusTreinos() {
   const session = await requireUser();
-  const { list: workouts } = await list<{
+  const { list: workouts } = await safeList<{
     id: string;
     name: string;
     weekday: number | null;

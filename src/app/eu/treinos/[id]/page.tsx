@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/server";
-import { findById, list } from "@/lib/nocodb/client";
 import { AppShell } from "@/components/app/AppShell";
 import { EuNav } from "@/components/app/EuNav";
 import { deleteOwnWorkout } from "../actions";
 import { ChevronLeft, Play, FileText, Trash2 } from "lucide-react";
 import { BodyMuscles, muscleLabels } from "@/components/brand/BodyMuscles";
+import { safeList, safeFindById } from "@/lib/safe";
 
 export default async function EuTreinoDetail({
   params,
@@ -16,7 +16,7 @@ export default async function EuTreinoDetail({
   await requireUser();
   const { id } = await params;
 
-  const w = await findById<{
+  const w = await safeFindById<{
     id: string;
     name: string;
     description: string | null;
@@ -29,7 +29,7 @@ export default async function EuTreinoDetail({
   const rawMuscles = typeof w.muscle_groups === "string" ? w.muscle_groups : "";
   const muscles = rawMuscles.split(",").map((s) => s.trim()).filter(Boolean);
 
-  const { list: exs } = await list<{
+  const { list: exs } = await safeList<{
     id: string;
     name: string;
     sets: number | null;

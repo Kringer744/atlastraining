@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/server";
-import { findById, findOne, list } from "@/lib/nocodb/client";
+import { safe, emptyList, safeList, safeFindOne, safeFindById } from "@/lib/safe";
+
 import { AppShell } from "@/components/app/AppShell";
 import { EuNav } from "@/components/app/EuNav";
 import { ProgressRing } from "@/components/brand/ProgressRing";
@@ -10,19 +11,18 @@ import { Play, Plus, Trophy, Flame, ArrowRight, Droplet, Moon, BarChart3, Scale 
 import { levelFromXp } from "@/lib/utils";
 import { AtlasCoach } from "@/components/app/AtlasCoach";
 import { atlasCoach } from "@/lib/atlas-coach";
-import { safe, emptyList } from "@/lib/safe";
 
 export default async function EuHome() {
   const session = await requireUser();
 
   const profile = await safe(
-    () => findById<{ full_name: string | null; created_at: string | null }>("users", session.sub),
+    () => safeFindById<{ full_name: string | null; created_at: string | null }>("users", session.sub),
     null,
     "eu:profile",
   );
   const stats = await safe(
     () =>
-      findOne<{
+      safeFindOne<{
         xp: number;
         streak_days: number;
         longest_streak: number;
@@ -33,7 +33,7 @@ export default async function EuHome() {
   );
   const workoutsRes = await safe(
     () =>
-      list<{ id: string; name: string; weekday: number | null }>("workouts", {
+      safeList<{ id: string; name: string; weekday: number | null }>("workouts", {
         where: `(client_id,eq,${session.sub})`,
         sort: "-created_at",
         limit: 50,
@@ -43,7 +43,7 @@ export default async function EuHome() {
   );
   const sessionsRes = await safe(
     () =>
-      list<{ id: string; started_at: string; total_volume_kg: number }>("sessions", {
+      safeList<{ id: string; started_at: string; total_volume_kg: number }>("sessions", {
         where: `(client_id,eq,${session.sub})`,
         sort: "-started_at",
         limit: 100,
@@ -53,7 +53,7 @@ export default async function EuHome() {
   );
   const medalsRes = await safe(
     () =>
-      list<{ id: string; title: string }>("achievements", {
+      safeList<{ id: string; title: string }>("achievements", {
         where: `(client_id,eq,${session.sub})`,
         sort: "-unlocked_at",
         limit: 3,
@@ -87,7 +87,7 @@ export default async function EuHome() {
 
   const lastMeasure = await safe(
     () =>
-      list<{ measured_at: string }>("measurements", {
+      safeList<{ measured_at: string }>("measurements", {
         where: `(client_id,eq,${session.sub})`,
         fields: "measured_at",
         sort: "-measured_at",

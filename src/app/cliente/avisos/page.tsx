@@ -1,16 +1,16 @@
 import { requireUser } from "@/lib/auth/server";
-import { findById, list } from "@/lib/nocodb/client";
 import { AppShell } from "@/components/app/AppShell";
 import { ClienteNav } from "@/components/app/ClienteNav";
 import { Bell, CheckCheck } from "lucide-react";
 import { relativeTimePt } from "@/lib/utils";
 import { markAllRead, markRead } from "./actions";
+import { safeList } from "@/lib/safe";
 
 export default async function ClienteAvisos() {
   const session = await requireUser();
 
   // O cliente pode receber tanto avisos com client_id == próprio quanto broadcast (client_id null) dos seus coaches.
-  const { list: links } = await list<{ coach_id: string }>("coach_clients", {
+  const { list: links } = await safeList<{ coach_id: string }>("coach_clients", {
     where: `(client_id,eq,${session.sub})`,
     fields: "coach_id",
     limit: 50,
@@ -24,7 +24,7 @@ export default async function ClienteAvisos() {
   }
   const where = whereParts.join("~or");
 
-  const { list: reminders } = await list<{
+  const { list: reminders } = await safeList<{
     id: string;
     title: string;
     body: string | null;
@@ -37,7 +37,7 @@ export default async function ClienteAvisos() {
   if (reminders.length > 0) {
     const ids = [...new Set(reminders.map((r) => r.coach_id))];
     const whereC = ids.map((id) => `(id,eq,${id})`).join("~or");
-    const r = await list<{ id: string; full_name: string | null }>("users", {
+    const r = await safeList<{ id: string; full_name: string | null }>("users", {
       where: whereC,
       fields: "id,full_name",
     });

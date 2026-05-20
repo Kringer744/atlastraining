@@ -1,5 +1,6 @@
 import { requireUser } from "@/lib/auth/server";
-import { list } from "@/lib/nocodb/client";
+import { safeList } from "@/lib/safe";
+
 import { AppShell } from "@/components/app/AppShell";
 import { EuNav } from "@/components/app/EuNav";
 import { addOwnMeasurement } from "../treinos/actions";
@@ -14,7 +15,7 @@ export default async function EvolucaoEu() {
   const session = await requireUser();
 
   const [measuresRes, sessionsRes, waterRes, prsRes] = await Promise.all([
-    list<{
+    safeList<{
       id: string;
       measured_at: string;
       weight_kg: number | null;
@@ -25,17 +26,17 @@ export default async function EvolucaoEu() {
       sort: "-measured_at",
       limit: 24,
     }),
-    list<{ started_at: string; total_volume_kg: number }>("sessions", {
+    safeList<{ started_at: string; total_volume_kg: number }>("sessions", {
       where: `(client_id,eq,${session.sub})`,
       sort: "-started_at",
       limit: 365,
     }),
-    list<{ logged_at: string; amount_ml: number }>("water_logs", {
+    safeList<{ logged_at: string; amount_ml: number }>("water_logs", {
       where: `(client_id,eq,${session.sub})`,
       sort: "-logged_at",
       limit: 500,
     }),
-    list<{ id: string; code: string; title: string; unlocked_at: string }>("achievements", {
+    safeList<{ id: string; code: string; title: string; unlocked_at: string }>("achievements", {
       where: `(client_id,eq,${session.sub})~and(code,like,PR_%)`,
       sort: "-unlocked_at",
       limit: 10,

@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/server";
-import { list } from "@/lib/nocodb/client";
 import { AppShell } from "@/components/app/AppShell";
 import { PersonalNav } from "@/components/app/PersonalNav";
 import { relativeTimePt } from "@/lib/utils";
 import { Plus, Bell } from "lucide-react";
+import { safeList } from "@/lib/safe";
 
 export default async function AvisosPage() {
   const session = await requireUser();
-  const { list: reminders } = await list<{
+  const { list: reminders } = await safeList<{
     id: string;
     title: string;
     body: string | null;
@@ -24,7 +24,7 @@ export default async function AvisosPage() {
   let userById: Record<string, string> = {};
   if (ids.length > 0) {
     const where = ids.map((id) => `(id,eq,${id})`).join("~or");
-    const r = await list<{ id: string; full_name: string | null }>("users", {
+    const r = await safeList<{ id: string; full_name: string | null }>("users", {
       where,
       fields: "id,full_name",
     });

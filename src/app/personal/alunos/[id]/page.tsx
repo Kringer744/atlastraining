@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/server";
-import { findById, findOne, list } from "@/lib/nocodb/client";
+import { safeList, safeFindOne, safeFindById } from "@/lib/safe";
+
 import { AppShell } from "@/components/app/AppShell";
 import { PersonalNav } from "@/components/app/PersonalNav";
 import { ProgressRing } from "@/components/brand/ProgressRing";
@@ -16,19 +17,19 @@ export default async function ClientDetail({
   const { id } = await params;
 
   const [profile, stats, sessionsRes, workoutsRes] = await Promise.all([
-    findById<{ full_name: string | null }>("users", id),
-    findOne<{
+    safeFindById<{ full_name: string | null }>("users", id),
+    safeFindOne<{
       xp: number;
       level: number;
       streak_days: number;
       longest_streak: number;
       total_sessions: number;
     }>("client_stats", { where: `(client_id,eq,${id})` }),
-    list<{ id: string; started_at: string; total_volume_kg: number; perceived_effort: number }>(
+    safeList<{ id: string; started_at: string; total_volume_kg: number; perceived_effort: number }>(
       "sessions",
       { where: `(client_id,eq,${id})`, sort: "-started_at", limit: 7 },
     ),
-    list<{ id: string; name: string; weekday: number | null }>("workouts", {
+    safeList<{ id: string; name: string; weekday: number | null }>("workouts", {
       where: `(client_id,eq,${id})`,
       sort: "-created_at",
       limit: 50,

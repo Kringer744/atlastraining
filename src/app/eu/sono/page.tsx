@@ -1,13 +1,13 @@
 import { requireUser } from "@/lib/auth/server";
-import { list } from "@/lib/nocodb/client";
 import { AppShell } from "@/components/app/AppShell";
 import { EuNav } from "@/components/app/EuNav";
 import { SleepMonitor } from "@/components/app/SleepMonitor";
 import { formatDateBR } from "@/lib/utils";
+import { safeList } from "@/lib/safe";
 
 export default async function SonoEu() {
   const session = await requireUser();
-  const { list: sessions } = await list<{
+  const { list: sessions } = await safeList<{
     id: string;
     started_at: string;
     duration_min: number;

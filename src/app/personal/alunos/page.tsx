@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/server";
-import { list } from "@/lib/nocodb/client";
 import { AppShell } from "@/components/app/AppShell";
 import { PersonalNav } from "@/components/app/PersonalNav";
 import { Plus, ChevronRight, Flame } from "lucide-react";
+import { safeList } from "@/lib/safe";
 
 export default async function AlunosPage() {
   const session = await requireUser();
 
-  const { list: links } = await list<{
+  const { list: links } = await safeList<{
     id: string;
     status: string;
     goal: string | null;
@@ -25,7 +25,7 @@ export default async function AlunosPage() {
     const where = [...new Set(links.map((l) => l.client_id))]
       .map((id) => `(id,eq,${id})`)
       .join("~or");
-    const r = await list<{ id: string; full_name: string | null }>("users", {
+    const r = await safeList<{ id: string; full_name: string | null }>("users", {
       where,
       fields: "id,full_name",
     });

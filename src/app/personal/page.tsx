@@ -1,37 +1,37 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/server";
-import { count, findById, list } from "@/lib/nocodb/client";
+import { safe, emptyList, safeList, safeFindById, safeCount } from "@/lib/safe";
+
 import { AppShell } from "@/components/app/AppShell";
 import { PersonalNav } from "@/components/app/PersonalNav";
 import { ProgressRing } from "@/components/brand/ProgressRing";
 import { ActivityDots } from "@/components/brand/ActivityDots";
 import { Plus, Users, Dumbbell, Bell, ArrowRight } from "lucide-react";
 import { relativeTimePt } from "@/lib/utils";
-import { safe, emptyList } from "@/lib/safe";
 
 export default async function PersonalHome() {
   const session = await requireUser();
   const profile = await safe(
-    () => findById<{ full_name: string | null }>("users", session.sub),
+    () => safeFindById<{ full_name: string | null }>("users", session.sub),
     null,
     "personal:profile",
   );
 
   const clientsCount = await safe(
     () =>
-      count("coach_clients", `(coach_id,eq,${session.sub})~and(status,eq,active)`),
+      safeCount("coach_clients", `(coach_id,eq,${session.sub})~and(status,eq,active)`),
     0,
     "personal:clientsCount",
   );
   const workoutsCount = await safe(
-    () => count("workouts", `(coach_id,eq,${session.sub})`),
+    () => safeCount("workouts", `(coach_id,eq,${session.sub})`),
     0,
     "personal:workoutsCount",
   );
 
   const linksRes = await safe(
     () =>
-      list<{ client_id: string }>("coach_clients", {
+      safeList<{ client_id: string }>("coach_clients", {
         where: `(coach_id,eq,${session.sub})`,
         fields: "client_id",
         limit: 100,
@@ -47,7 +47,7 @@ export default async function PersonalHome() {
   if (clientIds.length > 0) {
     const where = clientIds.map((id) => `(client_id,eq,${id})`).join("~or");
     const r = await safe(
-      () => list<any>("sessions", { where, sort: "-started_at", limit: 100 }),
+      () => safeList<any>("sessions", { where, sort: "-started_at", limit: 100 }),
       emptyList,
       "personal:sessions",
     );
@@ -57,7 +57,7 @@ export default async function PersonalHome() {
     );
   }
   const myProfile = await safe(
-    () => findById<{ created_at: string | null }>("users", session.sub),
+    () => safeFindById<{ created_at: string | null }>("users", session.sub),
     null,
     "personal:myProfile",
   );
@@ -67,7 +67,7 @@ export default async function PersonalHome() {
     const where = ids.map((id) => `(id,eq,${id})`).join("~or");
     const r = await safe(
       () =>
-        list<{ id: string; full_name: string | null }>("users", {
+        safeList<{ id: string; full_name: string | null }>("users", {
           where,
           fields: "id,full_name",
         }),

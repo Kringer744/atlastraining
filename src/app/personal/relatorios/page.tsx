@@ -1,14 +1,14 @@
 import { requireUser } from "@/lib/auth/server";
-import { list } from "@/lib/nocodb/client";
 import { AppShell } from "@/components/app/AppShell";
 import { PersonalNav } from "@/components/app/PersonalNav";
 import { VolumeBars } from "@/components/brand/VolumeBars";
 import { nocoDateFilter, relativeTimePt } from "@/lib/utils";
+import { safeList } from "@/lib/safe";
 
 export default async function Relatorios() {
   const session = await requireUser();
 
-  const { list: links } = await list<{ client_id: string }>("coach_clients", {
+  const { list: links } = await safeList<{ client_id: string }>("coach_clients", {
     where: `(coach_id,eq,${session.sub})`,
     fields: "client_id",
     limit: 200,
@@ -24,14 +24,14 @@ export default async function Relatorios() {
       "(" +
       ids.map((id) => `(client_id,eq,${id})`).join("~or") +
       `)~and${nocoDateFilter("started_at", "gte", since)}`;
-    const r = await list<any>("sessions", { where, sort: "-started_at", limit: 200 });
+    const r = await safeList<any>("sessions", { where, sort: "-started_at", limit: 200 });
     sessions = r.list;
   }
 
   let userById: Record<string, string> = {};
   if (ids.length > 0) {
     const where = ids.map((id) => `(id,eq,${id})`).join("~or");
-    const r = await list<{ id: string; full_name: string | null }>("users", {
+    const r = await safeList<{ id: string; full_name: string | null }>("users", {
       where,
       fields: "id,full_name",
     });

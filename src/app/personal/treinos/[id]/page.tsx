@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/server";
-import { findById, list } from "@/lib/nocodb/client";
 import { AppShell } from "@/components/app/AppShell";
 import { PersonalNav } from "@/components/app/PersonalNav";
 import { deleteWorkout } from "../actions";
 import { ChevronLeft, Trash2, FileText } from "lucide-react";
 import { BodyMuscles, muscleLabels } from "@/components/brand/BodyMuscles";
+import { safeList, safeFindById } from "@/lib/safe";
 
 export default async function TreinoDetail({
   params,
@@ -16,7 +16,7 @@ export default async function TreinoDetail({
   await requireUser();
   const { id } = await params;
 
-  const w = await findById<{
+  const w = await safeFindById<{
     id: string;
     name: string;
     description: string | null;
@@ -31,7 +31,7 @@ export default async function TreinoDetail({
   const muscles = rawMuscles.split(",").map((s) => s.trim()).filter(Boolean);
 
   const [exsRes, clientUser] = await Promise.all([
-    list<{
+    safeList<{
       id: string;
       name: string;
       sets: number | null;
@@ -44,7 +44,7 @@ export default async function TreinoDetail({
       limit: 200,
     }),
     w.client_id
-      ? findById<{ full_name: string | null }>("users", w.client_id)
+      ? safeFindById<{ full_name: string | null }>("users", w.client_id)
       : Promise.resolve(null),
   ]);
   const exs = exsRes.list;

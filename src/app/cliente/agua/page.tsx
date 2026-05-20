@@ -1,16 +1,16 @@
 import { requireUser } from "@/lib/auth/server";
-import { findById, list } from "@/lib/nocodb/client";
 import { AppShell } from "@/components/app/AppShell";
 import { ClienteNav } from "@/components/app/ClienteNav";
 import { WaterTracker } from "@/components/app/WaterTracker";
 import { addWater, setWaterGoal, undoLastWater } from "./actions";
 import { nocoDateFilter } from "@/lib/utils";
+import { safeList, safeFindById } from "@/lib/safe";
 
 const DEFAULT_GOAL_ML = 2500;
 
 export default async function AguaCliente() {
   const session = await requireUser();
-  const profile = await findById<{ daily_water_goal_ml: number | null }>(
+  const profile = await safeFindById<{ daily_water_goal_ml: number | null }>(
     "users",
     session.sub,
   );
@@ -19,7 +19,7 @@ export default async function AguaCliente() {
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
-  const { list: todayLogs } = await list<{
+  const { list: todayLogs } = await safeList<{
     id: string;
     logged_at: string;
     amount_ml: number;
@@ -34,7 +34,7 @@ export default async function AguaCliente() {
   // últimos 7 dias agregados
   const sevenAgo = new Date();
   sevenAgo.setDate(sevenAgo.getDate() - 7);
-  const { list: weekLogs } = await list<{ logged_at: string; amount_ml: number }>(
+  const { list: weekLogs } = await safeList<{ logged_at: string; amount_ml: number }>(
     "water_logs",
     {
       where: `(client_id,eq,${session.sub})~and${nocoDateFilter("logged_at", "gte", sevenAgo)}`,

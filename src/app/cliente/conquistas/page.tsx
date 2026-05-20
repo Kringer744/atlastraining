@@ -1,5 +1,6 @@
 import { requireUser } from "@/lib/auth/server";
-import { findOne, list } from "@/lib/nocodb/client";
+import { safeList, safeFindOne } from "@/lib/safe";
+
 import { AppShell } from "@/components/app/AppShell";
 import { ClienteNav } from "@/components/app/ClienteNav";
 import { formatDateBR, levelFromXp } from "@/lib/utils";
@@ -19,11 +20,11 @@ export default async function Conquistas() {
   const session = await requireUser();
 
   const [medalsRes, stats] = await Promise.all([
-    list<{ id: string; code: string; unlocked_at: string }>("achievements", {
+    safeList<{ id: string; code: string; unlocked_at: string }>("achievements", {
       where: `(client_id,eq,${session.sub})`,
       limit: 200,
     }),
-    findOne<{ xp: number }>("client_stats", { where: `(client_id,eq,${session.sub})` }),
+    safeFindOne<{ xp: number }>("client_stats", { where: `(client_id,eq,${session.sub})` }),
   ]);
   const medals = medalsRes.list;
   const unlocked = new Set(medals.map((m) => m.code));

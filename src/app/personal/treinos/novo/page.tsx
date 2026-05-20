@@ -1,8 +1,8 @@
 import { requireUser } from "@/lib/auth/server";
-import { list } from "@/lib/nocodb/client";
 import { AppShell } from "@/components/app/AppShell";
 import { PersonalNav } from "@/components/app/PersonalNav";
 import { NovoTreinoForm } from "./NovoTreinoForm";
+import { safeList } from "@/lib/safe";
 
 export default async function NovoTreinoPage({
   searchParams,
@@ -12,7 +12,7 @@ export default async function NovoTreinoPage({
   const sp = await searchParams;
   const session = await requireUser();
 
-  const { list: links } = await list<{ client_id: string }>("coach_clients", {
+  const { list: links } = await safeList<{ client_id: string }>("coach_clients", {
     where: `(coach_id,eq,${session.sub})`,
     fields: "client_id",
     limit: 200,
@@ -21,7 +21,7 @@ export default async function NovoTreinoPage({
   const ids = [...new Set(links.map((l) => l.client_id).filter(Boolean))];
   if (ids.length > 0) {
     const where = ids.map((id) => `(id,eq,${id})`).join("~or");
-    const r = await list<{ id: string; full_name: string | null }>("users", {
+    const r = await safeList<{ id: string; full_name: string | null }>("users", {
       where,
       fields: "id,full_name",
     });

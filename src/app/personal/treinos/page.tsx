@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/server";
-import { list } from "@/lib/nocodb/client";
 import { AppShell } from "@/components/app/AppShell";
 import { PersonalNav } from "@/components/app/PersonalNav";
 import { Plus, FileText } from "lucide-react";
+import { safeList } from "@/lib/safe";
 
 export default async function TreinosList() {
   const session = await requireUser();
-  const { list: workouts } = await list<{
+  const { list: workouts } = await safeList<{
     id: string;
     name: string;
     weekday: number | null;
@@ -23,7 +23,7 @@ export default async function TreinosList() {
   const clientIds = [...new Set(workouts.map((w) => w.client_id).filter(Boolean) as string[])];
   if (clientIds.length > 0) {
     const where = clientIds.map((id) => `(id,eq,${id})`).join("~or");
-    const r = await list<{ id: string; full_name: string | null }>("users", {
+    const r = await safeList<{ id: string; full_name: string | null }>("users", {
       where,
       fields: "id,full_name",
     });

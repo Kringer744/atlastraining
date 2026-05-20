@@ -1,5 +1,6 @@
 import { requireUser } from "@/lib/auth/server";
-import { findById, list } from "@/lib/nocodb/client";
+import { safeList, safeFindById } from "@/lib/safe";
+
 import { AppShell } from "@/components/app/AppShell";
 import { EuNav } from "@/components/app/EuNav";
 import { IniciarTreinoForm } from "@/components/app/IniciarTreinoForm";
@@ -14,8 +15,8 @@ export default async function IniciarEu({
   await requireUser();
   const { id } = await params;
   const [w, exsRes] = await Promise.all([
-    findById<{ name: string }>("workouts", id),
-    list<WorkoutExercise>("workout_exercises", {
+    safeFindById<{ name: string }>("workouts", id),
+    safeList<WorkoutExercise>("workout_exercises", {
       where: `(workout_id,eq,${id})`,
       sort: "position",
       limit: 200,
