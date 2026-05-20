@@ -6,6 +6,7 @@ import { AppShell } from "@/components/app/AppShell";
 import { EuNav } from "@/components/app/EuNav";
 import { deleteOwnWorkout } from "../actions";
 import { ChevronLeft, Play, FileText, Trash2 } from "lucide-react";
+import { BodyMuscles, muscleLabels } from "@/components/brand/BodyMuscles";
 
 export default async function EuTreinoDetail({
   params,
@@ -22,8 +23,10 @@ export default async function EuTreinoDetail({
     pdf_url: string | null;
     source: string;
     weekday: number | null;
+    muscle_groups: string | null;
   }>("workouts", id);
   if (!w) notFound();
+  const muscles = (w.muscle_groups ?? "").split(",").map((s) => s.trim()).filter(Boolean);
 
   const { list: exs } = await list<{
     id: string;
@@ -77,6 +80,17 @@ export default async function EuTreinoDetail({
           )}
         </div>
       </div>
+
+      {muscles.length > 0 && (
+        <div className="atlas-card mt-4">
+          <div className="text-xs uppercase tracking-wider text-atlas-muted mb-2 text-center">
+            Grupos trabalhados · {muscleLabels(muscles)}
+          </div>
+          <div className="flex justify-center">
+            <BodyMuscles selected={muscles} size={220} />
+          </div>
+        </div>
+      )}
 
       {w.source !== "pdf" && (
         <div className="mt-4 space-y-2">

@@ -6,6 +6,7 @@ import { AppShell } from "@/components/app/AppShell";
 import { PersonalNav } from "@/components/app/PersonalNav";
 import { deleteWorkout } from "../actions";
 import { ChevronLeft, Trash2, FileText } from "lucide-react";
+import { BodyMuscles, muscleLabels } from "@/components/brand/BodyMuscles";
 
 export default async function TreinoDetail({
   params,
@@ -23,8 +24,10 @@ export default async function TreinoDetail({
     source: string;
     pdf_url: string | null;
     client_id: string | null;
+    muscle_groups: string | null;
   }>("workouts", id);
   if (!w) notFound();
+  const muscles = (w.muscle_groups ?? "").split(",").map((s) => s.trim()).filter(Boolean);
 
   const [exsRes, clientUser] = await Promise.all([
     list<{
@@ -85,6 +88,17 @@ export default async function TreinoDetail({
           </a>
         )}
       </div>
+
+      {muscles.length > 0 && (
+        <div className="atlas-card mt-4">
+          <div className="text-xs uppercase tracking-wider text-atlas-muted mb-2 text-center">
+            Grupos trabalhados · {muscleLabels(muscles)}
+          </div>
+          <div className="flex justify-center">
+            <BodyMuscles selected={muscles} size={200} />
+          </div>
+        </div>
+      )}
 
       {w.source !== "pdf" && (
         <div className="mt-4 space-y-2">

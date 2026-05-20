@@ -9,6 +9,7 @@
     "lint": "next lint",
     "bootstrap:nocodb": "node scripts/bootstrap-nocodb.mjs",
     "add-solo-role": "node scripts/add-solo-role.mjs",
+    "add-muscle-groups": "node scripts/add-muscle-groups.mjs",
     "qa": "node scripts/qa-smoke.mjs"
   },
   "dependencies": {

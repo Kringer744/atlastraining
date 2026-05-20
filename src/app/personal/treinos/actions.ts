@@ -21,6 +21,7 @@ export async function createWorkout(payload: {
   description?: string | null;
   weekday?: number | null;
   client_id?: string | null;
+  muscle_groups?: string[];
   exercises: ExerciseInput[];
 }): Promise<{ id?: string; error?: string }> {
   const session = await requireUser();
@@ -36,6 +37,7 @@ export async function createWorkout(payload: {
     weekday: payload.weekday ?? null,
     source: "manual",
     pdf_url: null,
+    muscle_groups: (payload.muscle_groups ?? []).join(","),
     created_at: new Date().toISOString(),
   });
 

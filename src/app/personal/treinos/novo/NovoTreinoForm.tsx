@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createWorkout, uploadWorkoutPdf } from "../actions";
 import { Plus, Trash2, Upload, Dumbbell } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BodyMuscles } from "@/components/brand/BodyMuscles";
 
 type Client = { id: string; full_name: string };
 
@@ -32,6 +33,7 @@ export function NovoTreinoForm({
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<Row[]>([{ ...empty }]);
   const [client, setClient] = useState<string>(preselectClient ?? "");
+  const [muscles, setMuscles] = useState<string[]>([]);
 
   function updateRow(i: number, field: keyof Row, v: string) {
     setRows((r) => r.map((row, idx) => (idx === i ? { ...row, [field]: v } : row)));
@@ -74,6 +76,7 @@ export function NovoTreinoForm({
                   description: String(fd.get("description") ?? "") || null,
                   weekday: fd.get("weekday") ? Number(fd.get("weekday")) : null,
                   client_id: client || null,
+                  muscle_groups: muscles,
                   exercises: rows.map((r) => ({
                     name: r.name,
                     sets: r.sets ? Number(r.sets) : null,
@@ -112,6 +115,13 @@ export function NovoTreinoForm({
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div className="mt-4 atlas-card-muted">
+              <div className="text-xs uppercase tracking-wider text-atlas-muted mb-2 text-center">
+                Grupos musculares trabalhados
+              </div>
+              <BodyMuscles selected={muscles} onChange={setMuscles} />
             </div>
 
             <div className="mt-4">
