@@ -7,6 +7,7 @@ import { randomUUID } from "node:crypto";
 import { COOKIE_NAME, COOKIE_MAX_AGE, signSession } from "@/lib/auth/session";
 import { findOne, insert } from "@/lib/nocodb/client";
 import type { UserRole } from "@/lib/types";
+import { checkRate, nocoSafe } from "@/lib/security";
 
 type UserRow = {
   id: string;
@@ -16,9 +17,6 @@ type UserRow = {
   full_name: string | null;
 };
 
-function nocoEscape(s: string) {
-  return s.replace(/[(),]/g, "\\$&");
-}
 
 export type AuthState = { error?: string } | undefined;
 
@@ -43,10 +41,16 @@ export async function signInAction(
   const password = String(formData.get("password") ?? "");
   if (!email || !password) return { error: "Email e senha são obrigatórios." };
 
+  // Rate limit: 5 tentativas por minuto por email
+  const rate = checkRate(`signin:${email}`, 5, 60_000);
+  if (!rate.ok) {
+    return { error: `Muitas tentativas. Tenta em ${rate.retryIn}s.` };
+  }
+
   let user: UserRow | null = null;
   try {
     user = await findOne<UserRow>("users", {
-      where: `(email,eq,${nocoEscape(email)})`,
+      where: `(email,eq,${nocoSafe(email)})`,
     });
   } catch (e) {
     return { error: explain(e) };
@@ -93,9 +97,13 @@ export async function signUpAction(
   if (!["personal", "client", "solo"].includes(role))
     return { error: "Role inválida." };
 
+  // Rate limit: 3 signups por hora por email (anti-flood)
+  const rate = checkRate(`signup:${email}`, 3, 60 * 60_000);
+  if (!rate.ok) return { error: `Muitas tentativas. Tenta em ${rate.retryIn}s.` };
+
   try {
     const existing = await findOne<UserRow>("users", {
-      where: `(email,eq,${nocoEscape(email)})`,
+      where: `(email,eq,${nocoSafe(email)})`,
     });
     if (existing) return { error: "Já existe conta com este email." };
   } catch (e) {

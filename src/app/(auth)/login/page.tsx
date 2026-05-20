@@ -57,6 +57,11 @@ export default function LoginPage() {
           Criar conta
         </Link>
       </div>
+      <div className="mt-3 text-[10px] text-atlas-muted text-center space-x-2">
+        <Link href="/privacidade" className="hover:text-atlas-energy">Privacidade</Link>
+        <span>·</span>
+        <Link href="/termos" className="hover:text-atlas-energy">Termos</Link>
+      </div>
     </div>
   );
 }

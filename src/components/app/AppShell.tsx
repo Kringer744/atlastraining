@@ -3,6 +3,7 @@ import { AtlasLogo } from "@/components/brand/AtlasLogo";
 import { signOutAction } from "@/app/(auth)/actions";
 import { LogOut } from "lucide-react";
 import { NotificationBell } from "./NotificationBell";
+import { AppFooterLinks } from "./AppFooterLinks";
 
 export function AppShell({
   title,
@@ -53,6 +54,7 @@ export function AppShell({
           </div>
         )}
         {children}
+        <AppFooterLinks />
       </div>
 
       {bottomNav && (

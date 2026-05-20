@@ -84,7 +84,19 @@ export function SignupForm({ initialRole }: { initialRole: Role }) {
         <SubmitButton />
       </form>
 
-      <div className="mt-4 text-sm text-atlas-muted text-center">
+      <p className="mt-4 text-[11px] text-atlas-muted text-center leading-relaxed">
+        Ao criar conta, você concorda com os{" "}
+        <Link href="/termos" className="text-atlas-energy hover:underline">
+          Termos
+        </Link>{" "}
+        e a{" "}
+        <Link href="/privacidade" className="text-atlas-energy hover:underline">
+          Privacidade
+        </Link>
+        .
+      </p>
+
+      <div className="mt-3 text-sm text-atlas-muted text-center">
         Já tem conta?{" "}
         <Link href="/login" className="text-atlas-energy hover:underline">
           Entrar
