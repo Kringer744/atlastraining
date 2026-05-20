@@ -201,34 +201,47 @@ export function ActivityDots({
               <ChevronRight size={14} />
             </button>
           </div>
-          <div className="grid grid-cols-7 gap-1 text-[10px] text-atlas-muted text-center mb-1.5">
+          <div className="grid grid-cols-7 gap-2 text-[10px] text-atlas-muted text-center mb-3">
             {["S", "T", "Q", "Q", "S", "S", "D"].map((l, i) => (
               <div key={i}>{l}</div>
             ))}
           </div>
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-2 place-items-center px-2">
             {monthGrid.map((c, i) =>
               c === null ? (
-                <span key={i} className="h-8" />
+                <span key={i} className="w-3.5 h-3.5" />
               ) : (
                 <div
                   key={i}
-                  title={c.iso}
+                  title={`${c.iso}${c.done ? " · treinou" : ""}`}
                   className={cn(
-                    "h-8 rounded-lg flex items-center justify-center text-[11px] transition",
+                    "w-3.5 h-3.5 rounded-full transition",
                     c.done
-                      ? "bg-atlas-energy text-black font-bold shadow-[0_0_8px_rgba(198,255,0,0.5)]"
+                      ? "bg-atlas-energy shadow-[0_0_8px_rgba(198,255,0,0.6)]"
                       : c.isToday
-                        ? "border border-atlas-energy text-atlas-energy"
+                        ? "ring-1 ring-atlas-energy bg-atlas-energy/20"
                         : c.beforeStart || c.future
-                          ? "text-atlas-muted/40"
-                          : "bg-white/5 text-atlas-muted",
+                          ? "bg-white/5"
+                          : "bg-white/15",
                   )}
-                >
-                  {c.dayNumber}
-                </div>
+                />
               ),
             )}
+          </div>
+
+          <div className="flex items-center justify-center gap-3 mt-4 text-[10px] text-atlas-muted">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-atlas-energy shadow-glow inline-block" />
+              treino
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-white/15 inline-block" />
+              sem treino
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full ring-1 ring-atlas-energy bg-atlas-energy/20 inline-block" />
+              hoje
+            </span>
           </div>
         </>
       )}
