@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { BottomNavItem } from "./BottomNavItem";
-import { LayoutGrid, Dumbbell, Mountain, BarChart3 } from "lucide-react";
+import { LayoutGrid, Dumbbell, Mountain, Trophy, BarChart3 } from "lucide-react";
 
 export function EuNav() {
   const path = usePathname();
@@ -10,6 +10,7 @@ export function EuNav() {
     { href: "/eu", label: "Início", icon: LayoutGrid },
     { href: "/eu/treinos", label: "Treinos", icon: Dumbbell },
     { href: "/eu/ascensao", label: "Ascensão", icon: Mountain },
+    { href: "/eu/ranking", label: "Ranking", icon: Trophy },
     { href: "/eu/evolucao", label: "Evolução", icon: BarChart3 },
   ];
   return (

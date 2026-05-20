@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { BottomNavItem } from "./BottomNavItem";
-import { LayoutGrid, Dumbbell, Mountain, BarChart3, Bell } from "lucide-react";
+import { LayoutGrid, Dumbbell, Mountain, Trophy, BarChart3 } from "lucide-react";
 
 export function ClienteNav() {
   const path = usePathname();
@@ -10,8 +10,8 @@ export function ClienteNav() {
     { href: "/cliente", label: "Início", icon: LayoutGrid },
     { href: "/cliente/treinos", label: "Treinos", icon: Dumbbell },
     { href: "/cliente/ascensao", label: "Ascensão", icon: Mountain },
+    { href: "/cliente/ranking", label: "Ranking", icon: Trophy },
     { href: "/cliente/evolucao", label: "Evolução", icon: BarChart3 },
-    { href: "/cliente/avisos", label: "Avisos", icon: Bell },
   ];
   return (
     <>

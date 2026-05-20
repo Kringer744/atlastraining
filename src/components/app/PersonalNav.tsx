@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { BottomNavItem } from "./BottomNavItem";
-import { LayoutGrid, Users, Dumbbell, Bell, BarChart3 } from "lucide-react";
+import { LayoutGrid, Users, Dumbbell, Trophy, Bell } from "lucide-react";
 
 export function PersonalNav() {
   const path = usePathname();
@@ -10,8 +10,8 @@ export function PersonalNav() {
     { href: "/personal", label: "Início", icon: LayoutGrid },
     { href: "/personal/alunos", label: "Alunos", icon: Users },
     { href: "/personal/treinos", label: "Treinos", icon: Dumbbell },
+    { href: "/personal/ranking", label: "Ranking", icon: Trophy },
     { href: "/personal/avisos", label: "Avisos", icon: Bell },
-    { href: "/personal/relatorios", label: "Relatórios", icon: BarChart3 },
   ];
   return (
     <>
