@@ -22,6 +22,19 @@ function nocoEscape(s: string) {
 
 export type AuthState = { error?: string } | undefined;
 
+function explain(e: unknown): string {
+  if (e instanceof Error) {
+    if (e.message.includes("NocoDB 429")) {
+      return "Servidor sobrecarregado, tenta de novo em 5s.";
+    }
+    if (e.message.includes("NocoDB")) {
+      return "Erro ao acessar banco. Tenta de novo.";
+    }
+    return e.message;
+  }
+  return "Erro inesperado.";
+}
+
 export async function signInAction(
   _prev: AuthState,
   formData: FormData,
@@ -30,26 +43,39 @@ export async function signInAction(
   const password = String(formData.get("password") ?? "");
   if (!email || !password) return { error: "Email e senha são obrigatórios." };
 
-  const user = await findOne<UserRow>("users", {
-    where: `(email,eq,${nocoEscape(email)})`,
-  });
+  let user: UserRow | null = null;
+  try {
+    user = await findOne<UserRow>("users", {
+      where: `(email,eq,${nocoEscape(email)})`,
+    });
+  } catch (e) {
+    return { error: explain(e) };
+  }
   if (!user) return { error: "Credenciais inválidas." };
 
-  const ok = await bcrypt.compare(password, user.password_hash);
-  if (!ok) return { error: "Credenciais inválidas." };
+  try {
+    const ok = await bcrypt.compare(password, user.password_hash);
+    if (!ok) return { error: "Credenciais inválidas." };
+  } catch {
+    return { error: "Credenciais inválidas." };
+  }
 
-  const token = await signSession({
-    sub: user.id,
-    role: user.role,
-    name: user.full_name ?? undefined,
-  });
-  (await cookies()).set(COOKIE_NAME, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: COOKIE_MAX_AGE,
-  });
+  try {
+    const token = await signSession({
+      sub: user.id,
+      role: user.role,
+      name: user.full_name ?? undefined,
+    });
+    (await cookies()).set(COOKIE_NAME, token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: COOKIE_MAX_AGE,
+    });
+  } catch (e) {
+    return { error: explain(e) };
+  }
   redirect("/app");
 }
 
@@ -64,43 +90,66 @@ export async function signUpAction(
 
   if (!email || !password || password.length < 6)
     return { error: "Email e senha (mín. 6) obrigatórios." };
+  if (!["personal", "client", "solo"].includes(role))
+    return { error: "Role inválida." };
 
-  const existing = await findOne<UserRow>("users", {
-    where: `(email,eq,${nocoEscape(email)})`,
-  });
-  if (existing) return { error: "Já existe conta com este email." };
-
-  const id = randomUUID();
-  const password_hash = await bcrypt.hash(password, 10);
-
-  await insert("users", {
-    id,
-    email,
-    password_hash,
-    role,
-    full_name: fullName || email.split("@")[0],
-    created_at: new Date().toISOString(),
-  });
-
-  if (role === "client" || role === "solo") {
-    await insert("client_stats", {
-      client_id: id,
-      xp: 0,
-      level: 1,
-      streak_days: 0,
-      longest_streak: 0,
-      total_sessions: 0,
+  try {
+    const existing = await findOne<UserRow>("users", {
+      where: `(email,eq,${nocoEscape(email)})`,
     });
+    if (existing) return { error: "Já existe conta com este email." };
+  } catch (e) {
+    return { error: explain(e) };
   }
 
-  const token = await signSession({ sub: id, role, name: fullName || undefined });
-  (await cookies()).set(COOKIE_NAME, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: COOKIE_MAX_AGE,
-  });
+  const id = randomUUID();
+  let password_hash: string;
+  try {
+    password_hash = await bcrypt.hash(password, 10);
+  } catch (e) {
+    return { error: explain(e) };
+  }
+
+  try {
+    await insert("users", {
+      id,
+      email,
+      password_hash,
+      role,
+      full_name: fullName || email.split("@")[0],
+      created_at: new Date().toISOString(),
+    });
+  } catch (e) {
+    return { error: explain(e) };
+  }
+
+  if (role === "client" || role === "solo") {
+    try {
+      await insert("client_stats", {
+        client_id: id,
+        xp: 0,
+        level: 1,
+        streak_days: 0,
+        longest_streak: 0,
+        total_sessions: 0,
+      });
+    } catch {
+      // não bloqueia signup — stats será criado on-demand depois
+    }
+  }
+
+  try {
+    const token = await signSession({ sub: id, role, name: fullName || undefined });
+    (await cookies()).set(COOKIE_NAME, token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: COOKIE_MAX_AGE,
+    });
+  } catch (e) {
+    return { error: explain(e) };
+  }
   redirect("/app");
 }
 

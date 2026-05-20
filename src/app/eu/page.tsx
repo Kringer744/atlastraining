@@ -12,7 +12,7 @@ import { levelFromXp } from "@/lib/utils";
 export default async function EuHome() {
   const session = await requireUser();
 
-  const profile = await findById<{ full_name: string | null }>("users", session.sub);
+  const profile = await findById<{ full_name: string | null; created_at: string | null }>("users", session.sub);
   const stats = await findOne<{
     xp: number;
     streak_days: number;
@@ -25,7 +25,7 @@ export default async function EuHome() {
   );
   const sessionsRes = await list<{ id: string; started_at: string; total_volume_kg: number }>(
     "sessions",
-    { where: `(client_id,eq,${session.sub})`, sort: "-started_at", limit: 7 },
+    { where: `(client_id,eq,${session.sub})`, sort: "-started_at", limit: 100 },
   );
   const medalsRes = await list<{ id: string; title: string }>("achievements", {
     where: `(client_id,eq,${session.sub})`,
@@ -44,15 +44,17 @@ export default async function EuHome() {
   const medals = medalsRes.list;
   const nextWorkout = workouts.find((w) => w.weekday === today) ?? workouts[0];
 
-  const maxVol = Math.max(1, ...sessions.map((s) => Number(s.total_volume_kg ?? 0)));
+  const last7 = sessions.slice(0, 7);
+  const maxVol = Math.max(1, ...last7.map((s) => Number(s.total_volume_kg ?? 0)));
   const bars = Array.from({ length: 7 }).map((_, i) => {
-    const s = sessions[i];
+    const s = last7[i];
     return s ? Number(s.total_volume_kg ?? 0) / maxVol : 0;
   });
-  const totalVolume = sessions.reduce(
+  const totalVolume = last7.reduce(
     (acc, s) => acc + Number(s.total_volume_kg ?? 0),
     0,
   );
+  const sessionDates = sessions.map((s) => s.started_at.slice(0, 10));
 
   return (
     <AppShell
@@ -129,7 +131,10 @@ export default async function EuHome() {
       </div>
 
       <div className="mt-4">
-        <ActivityDots />
+        <ActivityDots
+          startDate={profile?.created_at?.slice(0, 10)}
+          sessionDates={sessionDates}
+        />
       </div>
 
       <div className="mt-4 atlas-card">

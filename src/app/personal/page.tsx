@@ -27,11 +27,16 @@ export default async function PersonalHome() {
   const clientIds = links.map((l) => l.client_id).filter(Boolean);
 
   let sessions: any[] = [];
+  let activityDates: string[] = [];
   if (clientIds.length > 0) {
     const where = clientIds.map((id) => `(client_id,eq,${id})`).join("~or");
-    const r = await list<any>("sessions", { where, sort: "-started_at", limit: 5 });
-    sessions = r.list;
+    const r = await list<any>("sessions", { where, sort: "-started_at", limit: 100 });
+    sessions = r.list.slice(0, 5);
+    activityDates = r.list.map((s: any) =>
+      typeof s.started_at === "string" ? s.started_at.slice(0, 10) : "",
+    );
   }
+  const myProfile = await findById<{ created_at: string | null }>("users", session.sub);
   const clientById: Record<string, string> = {};
   if (sessions.length > 0) {
     const ids = [...new Set(sessions.map((s) => s.client_id))];
@@ -89,7 +94,10 @@ export default async function PersonalHome() {
       </div>
 
       <div className="mt-4">
-        <ActivityDots />
+        <ActivityDots
+          startDate={myProfile?.created_at?.slice(0, 10)}
+          sessionDates={activityDates}
+        />
       </div>
 
       <div className="mt-6">

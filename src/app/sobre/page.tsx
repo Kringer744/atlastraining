@@ -100,7 +100,7 @@ export default function Landing() {
         </div>
 
         <div className="mt-10">
-          <ActivityDots />
+          <ActivityDots sessionDates={[]} />
         </div>
       </section>
 
