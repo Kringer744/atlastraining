@@ -22,7 +22,7 @@ export async function createWorkout(payload: {
   weekday?: number | null;
   client_id?: string | null;
   exercises: ExerciseInput[];
-}) {
+}): Promise<{ id?: string; error?: string }> {
   const session = await requireUser();
   if (session.role !== "personal") return { error: "Apenas personais." };
 
@@ -55,10 +55,12 @@ export async function createWorkout(payload: {
   if (rows.length > 0) await insertMany("workout_exercises", rows);
 
   revalidatePath("/personal/treinos");
-  redirect(`/personal/treinos/${id}`);
+  return { id };
 }
 
-export async function uploadWorkoutPdf(formData: FormData) {
+export async function uploadWorkoutPdf(
+  formData: FormData,
+): Promise<{ id?: string; error?: string }> {
   const session = await requireUser();
   if (session.role !== "personal") return { error: "Apenas personais." };
 
@@ -86,10 +88,10 @@ export async function uploadWorkoutPdf(formData: FormData) {
   });
 
   revalidatePath("/personal/treinos");
-  redirect(`/personal/treinos/${id}`);
+  return { id };
 }
 
-export async function deleteWorkout(formData: FormData) {
+export async function deleteWorkout(formData: FormData): Promise<void> {
   await requireUser();
   const id = String(formData.get("id") ?? "");
   if (id) await remove("workouts", id);

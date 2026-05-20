@@ -27,7 +27,7 @@ export async function createOwnWorkout(payload: {
   description?: string | null;
   weekday?: number | null;
   exercises: ExerciseInput[];
-}) {
+}): Promise<{ id?: string; error?: string }> {
   const session = await requireUser();
   if (session.role !== "solo") return { error: "Apenas Atlas Pessoal." };
 
@@ -60,10 +60,12 @@ export async function createOwnWorkout(payload: {
   if (rows.length > 0) await insertMany("workout_exercises", rows);
 
   revalidatePath("/eu/treinos");
-  redirect(`/eu/treinos/${id}`);
+  return { id };
 }
 
-export async function uploadOwnPdf(formData: FormData) {
+export async function uploadOwnPdf(
+  formData: FormData,
+): Promise<{ id?: string; error?: string }> {
   const session = await requireUser();
   if (session.role !== "solo") return { error: "Apenas Atlas Pessoal." };
 
@@ -90,10 +92,10 @@ export async function uploadOwnPdf(formData: FormData) {
   });
 
   revalidatePath("/eu/treinos");
-  redirect(`/eu/treinos/${id}`);
+  return { id };
 }
 
-export async function deleteOwnWorkout(formData: FormData) {
+export async function deleteOwnWorkout(formData: FormData): Promise<void> {
   const session = await requireUser();
   if (session.role !== "solo") return;
   const id = String(formData.get("id") ?? "");
@@ -116,7 +118,7 @@ export async function finishOwnSession(params: {
   perceived_effort: number;
   notes?: string | null;
   sets: SetInput[];
-}) {
+}): Promise<{ redirectTo?: string; error?: string }> {
   const session = await requireUser();
   if (session.role !== "solo") return { error: "Apenas Atlas Pessoal." };
 
@@ -232,7 +234,9 @@ export async function finishOwnSession(params: {
   }
 
   revalidatePath("/eu");
-  redirect(`/eu/treinos/${params.workout_id}/concluido?xp=${xpEarned}&streak=${streak}`);
+  return {
+    redirectTo: `/eu/treinos/${params.workout_id}/concluido?xp=${xpEarned}&streak=${streak}`,
+  };
 }
 
 export async function addOwnMeasurement(formData: FormData): Promise<void> {

@@ -1,12 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
-import { signInAction } from "../actions";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
+import { signInAction, type AuthState } from "../actions";
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button disabled={pending} className="atlas-btn-primary w-full">
+      {pending ? "Entrando..." : "Entrar"}
+    </button>
+  );
+}
 
 export default function LoginPage() {
-  const [pending, start] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const [state, formAction] = useActionState<AuthState, FormData>(
+    signInAction,
+    undefined,
+  );
 
   return (
     <div className="atlas-card">
@@ -15,16 +27,7 @@ export default function LoginPage() {
         Bem-vindo de volta. Vamos treinar.
       </p>
 
-      <form
-        action={(fd) =>
-          start(async () => {
-            setError(null);
-            const res = await signInAction(fd);
-            if (res?.error) setError(res.error);
-          })
-        }
-        className="mt-6 space-y-3"
-      >
+      <form action={formAction} className="mt-6 space-y-3">
         <input
           name="email"
           type="email"
@@ -40,14 +43,12 @@ export default function LoginPage() {
           minLength={6}
           className="atlas-input"
         />
-        {error && (
+        {state?.error && (
           <div className="text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-xl px-3 py-2">
-            {error}
+            {state.error}
           </div>
         )}
-        <button disabled={pending} className="atlas-btn-primary w-full">
-          {pending ? "Entrando..." : "Entrar"}
-        </button>
+        <SubmitButton />
       </form>
 
       <div className="mt-4 text-sm text-atlas-muted text-center">

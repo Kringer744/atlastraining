@@ -10,7 +10,14 @@ function nocoEscape(s: string) {
   return s.replace(/[(),]/g, "\\$&");
 }
 
-export async function linkClientByEmail(formData: FormData) {
+export type LinkState =
+  | { error?: string; warning?: string }
+  | undefined;
+
+export async function linkClientByEmail(
+  _prev: LinkState,
+  formData: FormData,
+): Promise<LinkState> {
   const session = await requireUser();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const goal = String(formData.get("goal") ?? "") || null;

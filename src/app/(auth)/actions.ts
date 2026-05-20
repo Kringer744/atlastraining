@@ -20,7 +20,12 @@ function nocoEscape(s: string) {
   return s.replace(/[(),]/g, "\\$&");
 }
 
-export async function signInAction(formData: FormData) {
+export type AuthState = { error?: string } | undefined;
+
+export async function signInAction(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
   if (!email || !password) return { error: "Email e senha são obrigatórios." };
@@ -48,7 +53,10 @@ export async function signInAction(formData: FormData) {
   redirect("/app");
 }
 
-export async function signUpAction(formData: FormData) {
+export async function signUpAction(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
   const fullName = String(formData.get("full_name") ?? "").trim();

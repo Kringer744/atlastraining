@@ -1,17 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
-import { signUpAction } from "../actions";
+import { useActionState, useState } from "react";
+import { useFormStatus } from "react-dom";
+import { signUpAction, type AuthState } from "../actions";
 import { Dumbbell, User, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Role = "personal" | "client" | "solo";
 
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button disabled={pending} className="atlas-btn-primary w-full">
+      {pending ? "Criando..." : "Criar conta"}
+    </button>
+  );
+}
+
 export function SignupForm({ initialRole }: { initialRole: Role }) {
   const [role, setRole] = useState<Role>(initialRole);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, start] = useTransition();
+  const [state, formAction] = useActionState<AuthState, FormData>(
+    signUpAction,
+    undefined,
+  );
 
   const options: { value: Role; icon: any; title: string; desc: string }[] = [
     { value: "personal", icon: Dumbbell, title: "Sou Personal", desc: "Gerencio alunos e treinos." },
@@ -46,17 +58,8 @@ export function SignupForm({ initialRole }: { initialRole: Role }) {
         ))}
       </div>
 
-      <form
-        action={(fd) =>
-          start(async () => {
-            setError(null);
-            fd.set("role", role);
-            const res = await signUpAction(fd);
-            if (res?.error) setError(res.error);
-          })
-        }
-        className="mt-5 space-y-3"
-      >
+      <form action={formAction} className="mt-5 space-y-3">
+        <input type="hidden" name="role" value={role} />
         <input name="full_name" placeholder="Seu nome" required className="atlas-input" />
         <input
           name="email"
@@ -73,14 +76,12 @@ export function SignupForm({ initialRole }: { initialRole: Role }) {
           minLength={6}
           className="atlas-input"
         />
-        {error && (
+        {state?.error && (
           <div className="text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-xl px-3 py-2">
-            {error}
+            {state.error}
           </div>
         )}
-        <button disabled={pending} className="atlas-btn-primary w-full">
-          {pending ? "Criando..." : "Criar conta"}
-        </button>
+        <SubmitButton />
       </form>
 
       <div className="mt-4 text-sm text-atlas-muted text-center">

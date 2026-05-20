@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import type { WorkoutExercise } from "@/lib/types";
 import { Plus, Check, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -29,7 +30,7 @@ export type FinishHandler = (params: {
   perceived_effort: number;
   notes?: string | null;
   sets: SetInput[];
-}) => Promise<{ error?: string } | void>;
+}) => Promise<{ redirectTo?: string; error?: string } | void>;
 
 export function IniciarTreinoForm({
   workoutId,
@@ -40,6 +41,8 @@ export function IniciarTreinoForm({
   exercises: WorkoutExercise[];
   onFinish: FinishHandler;
 }) {
+  const router = useRouter();
+
   const initialRows: Row[] = useMemo(() => {
     if (exercises.length === 0)
       return [
@@ -217,7 +220,7 @@ export function IniciarTreinoForm({
         disabled={pending}
         onClick={() =>
           start(async () => {
-            await onFinish({
+            const res = await onFinish({
               workout_id: workoutId,
               perceived_effort: rpe,
               notes: notes || null,
@@ -232,6 +235,7 @@ export function IniciarTreinoForm({
                   rpe: r.rpe ? Number(r.rpe) : null,
                 })),
             });
+            if (res?.redirectTo) router.push(res.redirectTo);
           })
         }
         className="atlas-btn-primary w-full text-lg py-4"

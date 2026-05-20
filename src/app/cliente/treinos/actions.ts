@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { randomUUID } from "node:crypto";
 import { requireUser } from "@/lib/auth/server";
 import {
@@ -26,7 +25,7 @@ export async function finishSession(params: {
   perceived_effort: number;
   notes?: string | null;
   sets: SetInput[];
-}) {
+}): Promise<{ redirectTo?: string; error?: string }> {
   const session = await requireUser();
   if (session.role !== "client") return { error: "Apenas alunos." };
 
@@ -145,5 +144,7 @@ export async function finishSession(params: {
   }
 
   revalidatePath("/cliente");
-  redirect(`/cliente/treinos/${params.workout_id}/concluido?xp=${xpEarned}&streak=${streak}`);
+  return {
+    redirectTo: `/cliente/treinos/${params.workout_id}/concluido?xp=${xpEarned}&streak=${streak}`,
+  };
 }

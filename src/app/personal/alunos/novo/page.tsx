@@ -1,16 +1,25 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { AppShell } from "@/components/app/AppShell";
 import { PersonalNav } from "@/components/app/PersonalNav";
-import { linkClientByEmail } from "../actions";
+import { linkClientByEmail, type LinkState } from "../actions";
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button disabled={pending} className="atlas-btn-primary w-full">
+      {pending ? "Vinculando..." : "Vincular aluno"}
+    </button>
+  );
+}
 
 export default function NovoAlunoPage() {
-  const router = useRouter();
-  const [pending, start] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-  const [warning, setWarning] = useState<string | null>(null);
+  const [state, formAction] = useActionState<LinkState, FormData>(
+    linkClientByEmail,
+    undefined,
+  );
 
   return (
     <AppShell
@@ -18,19 +27,7 @@ export default function NovoAlunoPage() {
       subtitle="Vincule pelo email do aluno. Se ele ainda não tiver conta, fica um convite registrado."
       bottomNav={<PersonalNav />}
     >
-      <form
-        action={(fd) =>
-          start(async () => {
-            setError(null);
-            setWarning(null);
-            const res = await linkClientByEmail(fd);
-            if (res?.error) setError(res.error);
-            else if (res?.warning) setWarning(res.warning);
-            else router.push("/personal/alunos");
-          })
-        }
-        className="atlas-card space-y-3 max-w-md"
-      >
+      <form action={formAction} className="atlas-card space-y-3 max-w-md">
         <label className="block">
           <span className="text-sm text-atlas-muted">Email do aluno</span>
           <input
@@ -49,19 +46,17 @@ export default function NovoAlunoPage() {
             className="atlas-input mt-1"
           />
         </label>
-        {error && (
+        {state?.error && (
           <div className="text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-xl px-3 py-2">
-            {error}
+            {state.error}
           </div>
         )}
-        {warning && (
+        {state?.warning && (
           <div className="text-sm text-atlas-energy bg-atlas-energy/10 border border-atlas-energy/30 rounded-xl px-3 py-2">
-            {warning}
+            {state.warning}
           </div>
         )}
-        <button disabled={pending} className="atlas-btn-primary w-full">
-          {pending ? "Vinculando..." : "Vincular aluno"}
-        </button>
+        <SubmitButton />
       </form>
     </AppShell>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { createOwnWorkout, uploadOwnPdf } from "../actions";
 import { Plus, Trash2, Upload, Dumbbell } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,7 @@ type Row = {
 const empty: Row = { name: "", sets: "", reps: "", load_kg: "", rest_seconds: "", notes: "" };
 
 export function NovoTreinoEuForm() {
+  const router = useRouter();
   const [tab, setTab] = useState<"manual" | "pdf">("manual");
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +74,7 @@ export function NovoTreinoEuForm() {
                   })),
                 });
                 if (res?.error) setError(res.error);
+                else if (res?.id) router.push(`/eu/treinos/${res.id}`);
               });
             }}
           >
@@ -170,6 +173,7 @@ export function NovoTreinoEuForm() {
                 setError(null);
                 const res = await uploadOwnPdf(fd);
                 if (res?.error) setError(res.error);
+                else if (res?.id) router.push(`/eu/treinos/${res.id}`);
               });
             }}
           >
