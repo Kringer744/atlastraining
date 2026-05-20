@@ -1,0 +1,29 @@
+{
+  "name": "Atlas Training",
+  "short_name": "Atlas",
+  "description": "Treine. Evolua. Conquiste.",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0F0F12",
+  "theme_color": "#0F0F12",
+  "orientation": "portrait",
+  "categories": ["health", "fitness", "lifestyle"],
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "/icons/app-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/app-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Iniciar treino",
+      "url": "/cliente/treinos",
+      "icons": [{ "src": "/icons/app-icon.png", "sizes": "512x512", "type": "image/png" }]
+    },
+    {
+      "name": "Novo aluno",
+      "url": "/personal/alunos/novo",
+      "icons": [{ "src": "/icons/app-icon.png", "sizes": "512x512", "type": "image/png" }]
+    }
+  ]
+}

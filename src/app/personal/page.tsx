@@ -1,0 +1,141 @@
+import Link from "next/link";
+import { requireUser } from "@/lib/auth/server";
+import { count, findById, list } from "@/lib/nocodb/client";
+import { AppShell } from "@/components/app/AppShell";
+import { PersonalNav } from "@/components/app/PersonalNav";
+import { ProgressRing } from "@/components/brand/ProgressRing";
+import { ActivityDots } from "@/components/brand/ActivityDots";
+import { Plus, Users, Dumbbell, Bell, ArrowRight } from "lucide-react";
+import { relativeTimePt } from "@/lib/utils";
+
+export default async function PersonalHome() {
+  const session = await requireUser();
+  const profile = await findById<{ full_name: string | null }>("users", session.sub);
+
+  const clientsCount = await count(
+    "coach_clients",
+    `(coach_id,eq,${session.sub})~and(status,eq,active)`,
+  );
+  const workoutsCount = await count("workouts", `(coach_id,eq,${session.sub})`);
+
+  // Coleta últimas sessões dos meus alunos
+  const { list: links } = await list<{ client_id: string }>("coach_clients", {
+    where: `(coach_id,eq,${session.sub})`,
+    fields: "client_id",
+    limit: 100,
+  });
+  const clientIds = links.map((l) => l.client_id).filter(Boolean);
+
+  let sessions: any[] = [];
+  if (clientIds.length > 0) {
+    const where = clientIds.map((id) => `(client_id,eq,${id})`).join("~or");
+    const r = await list<any>("sessions", { where, sort: "-started_at", limit: 5 });
+    sessions = r.list;
+  }
+  const clientById: Record<string, string> = {};
+  if (sessions.length > 0) {
+    const ids = [...new Set(sessions.map((s) => s.client_id))];
+    const where = ids.map((id) => `(id,eq,${id})`).join("~or");
+    const r = await list<{ id: string; full_name: string | null }>("users", {
+      where,
+      fields: "id,full_name",
+    });
+    for (const u of r.list) clientById[u.id] = u.full_name ?? "Aluno";
+  }
+
+  const firstName = (profile?.full_name ?? "Personal").split(" ")[0];
+
+  return (
+    <AppShell
+      title={`Olá, ${firstName}`}
+      subtitle="Bora evoluir seus alunos hoje."
+      actions={
+        <Link href="/personal/alunos/novo" className="atlas-btn-primary text-sm py-2">
+          <Plus size={16} /> Novo aluno
+        </Link>
+      }
+      bottomNav={<PersonalNav />}
+    >
+      <div className="grid grid-cols-2 gap-3">
+        <div className="atlas-card">
+          <div className="flex items-center gap-3">
+            <ProgressRing
+              value={Math.min(100, clientsCount * 10)}
+              size={64}
+              stroke={5}
+              label={<span className="text-atlas-energy text-lg font-bold">{clientsCount}</span>}
+            />
+            <div>
+              <div className="text-xs uppercase tracking-wider text-atlas-muted">
+                Alunos ativos
+              </div>
+              <div className="font-medium">na sua base</div>
+            </div>
+          </div>
+        </div>
+        <div className="atlas-card">
+          <div className="flex items-center gap-3">
+            <div className="rounded-full bg-atlas-energy/15 p-3">
+              <Dumbbell className="text-atlas-energy" />
+            </div>
+            <div>
+              <div className="text-xs uppercase tracking-wider text-atlas-muted">
+                Treinos criados
+              </div>
+              <div className="text-2xl font-bold">{workoutsCount}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <ActivityDots />
+      </div>
+
+      <div className="mt-6">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold">Sessões recentes</h2>
+          <Link href="/personal/relatorios" className="text-xs text-atlas-energy">
+            Ver tudo <ArrowRight size={12} className="inline" />
+          </Link>
+        </div>
+        <div className="space-y-2">
+          {sessions.length === 0 && (
+            <div className="atlas-card-muted text-sm text-atlas-muted">
+              Ainda sem sessões. Quando seus alunos treinarem, vai aparecer aqui.
+            </div>
+          )}
+          {sessions.map((s: any) => (
+            <div key={s.id} className="atlas-card-muted flex items-center justify-between">
+              <div>
+                <div className="font-medium">{clientById[s.client_id] ?? "Aluno"}</div>
+                <div className="text-xs text-atlas-muted">
+                  {relativeTimePt(s.started_at)} · {Number(s.total_volume_kg ?? 0)} kg de volume
+                </div>
+              </div>
+              <span className="atlas-chip-energy">PSE {s.perceived_effort ?? "—"}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-6 grid grid-cols-3 gap-3">
+        <Link href="/personal/alunos" className="atlas-card flex flex-col items-start">
+          <Users className="text-atlas-energy" />
+          <div className="mt-2 font-semibold">Alunos</div>
+          <div className="text-xs text-atlas-muted">Gerenciar base</div>
+        </Link>
+        <Link href="/personal/treinos/novo" className="atlas-card flex flex-col items-start">
+          <Dumbbell className="text-atlas-energy" />
+          <div className="mt-2 font-semibold">Novo treino</div>
+          <div className="text-xs text-atlas-muted">Manual ou PDF</div>
+        </Link>
+        <Link href="/personal/avisos" className="atlas-card flex flex-col items-start">
+          <Bell className="text-atlas-energy" />
+          <div className="mt-2 font-semibold">Avisos</div>
+          <div className="text-xs text-atlas-muted">Lembretes ao aluno</div>
+        </Link>
+      </div>
+    </AppShell>
+  );
+}

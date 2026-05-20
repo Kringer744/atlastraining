@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: #0F0F12;
+  color: #EDEDED;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-image:
+    radial-gradient(1200px 600px at 10% -10%, rgba(198,255,0,0.06), transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, rgba(198,255,0,0.04), transparent 60%);
+}
+
+@layer components {
+  .atlas-card {
+    @apply rounded-atlas bg-atlas-focus-2 border border-white/5 p-5;
+  }
+  .atlas-card-muted {
+    @apply rounded-atlas bg-atlas-balance/60 border border-white/5 p-5;
+  }
+  .atlas-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 font-medium transition active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .atlas-btn-primary {
+    @apply atlas-btn bg-atlas-energy text-black hover:bg-atlas-energy-dim shadow-glow;
+  }
+  .atlas-btn-ghost {
+    @apply atlas-btn bg-white/5 text-atlas-contrast hover:bg-white/10 border border-white/10;
+  }
+  .atlas-btn-danger {
+    @apply atlas-btn bg-red-500/15 text-red-300 hover:bg-red-500/25 border border-red-500/30;
+  }
+  .atlas-input {
+    @apply w-full rounded-2xl bg-atlas-balance/80 border border-white/10 px-4 py-3 text-atlas-contrast placeholder:text-atlas-muted focus:outline-none focus:ring-2 focus:ring-atlas-energy/40 focus:border-atlas-energy/40;
+  }
+  .atlas-chip {
+    @apply inline-flex items-center gap-1.5 rounded-full bg-white/5 border border-white/10 px-3 py-1 text-xs text-atlas-contrast;
+  }
+  .atlas-chip-energy {
+    @apply atlas-chip bg-atlas-energy/15 border-atlas-energy/30 text-atlas-energy;
+  }
+}
+
+/* Progress ring helper */
+.ring-track {
+  stroke: rgba(255,255,255,0.08);
+}
+.ring-fill {
+  stroke: #C6FF00;
+  filter: drop-shadow(0 0 6px rgba(198,255,0,0.45));
+}
+
+/* Subtle dot grid for "activity" widgets */
+.dot-grid {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.16) 1px, transparent 1px);
+  background-size: 14px 14px;
+}

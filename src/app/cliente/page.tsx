@@ -1,0 +1,174 @@
+import Link from "next/link";
+import { requireUser } from "@/lib/auth/server";
+import { findById, findOne, list } from "@/lib/nocodb/client";
+import { AppShell } from "@/components/app/AppShell";
+import { ClienteNav } from "@/components/app/ClienteNav";
+import { ProgressRing } from "@/components/brand/ProgressRing";
+import { ActivityDots } from "@/components/brand/ActivityDots";
+import { VolumeBars } from "@/components/brand/VolumeBars";
+import { Play, Trophy, Flame, ArrowRight } from "lucide-react";
+import { levelFromXp } from "@/lib/utils";
+
+export default async function ClienteHome() {
+  const session = await requireUser();
+
+  const profile = await findById<{ full_name: string | null }>("users", session.sub);
+  const stats = await findOne<{
+    xp: number;
+    streak_days: number;
+    longest_streak: number;
+    total_sessions: number;
+  }>("client_stats", { where: `(client_id,eq,${session.sub})` });
+  const workoutsRes = await list<{ id: string; name: string; weekday: number | null }>(
+    "workouts",
+    { where: `(client_id,eq,${session.sub})`, sort: "-created_at", limit: 50 },
+  );
+  const sessionsRes = await list<{ id: string; started_at: string; total_volume_kg: number }>(
+    "sessions",
+    { where: `(client_id,eq,${session.sub})`, sort: "-started_at", limit: 7 },
+  );
+  const medalsRes = await list<{ id: string; title: string }>("achievements", {
+    where: `(client_id,eq,${session.sub})`,
+    sort: "-unlocked_at",
+    limit: 3,
+  });
+
+  const firstName = (profile?.full_name ?? "Atleta").split(" ")[0];
+  const xp = stats?.xp ?? 0;
+  const lvl = levelFromXp(xp);
+  const ringPct = (lvl.intoLevel / lvl.neededForNext) * 100;
+  const streak = stats?.streak_days ?? 0;
+  const today = new Date().getDay();
+  const workouts = workoutsRes.list;
+  const sessions = sessionsRes.list;
+  const medals = medalsRes.list;
+  const nextWorkout = workouts.find((w) => w.weekday === today) ?? workouts[0];
+
+  const maxVol = Math.max(1, ...sessions.map((s) => Number(s.total_volume_kg ?? 0)));
+  const bars = Array.from({ length: 7 }).map((_, i) => {
+    const s = sessions[i];
+    return s ? Number(s.total_volume_kg ?? 0) / maxVol : 0;
+  });
+  const totalVolume = sessions.reduce(
+    (acc, s) => acc + Number(s.total_volume_kg ?? 0),
+    0,
+  );
+
+  return (
+    <AppShell
+      title={`Olá, ${firstName}`}
+      subtitle="Você está indo bem!"
+      bottomNav={<ClienteNav />}
+    >
+      <div className="atlas-card flex items-center gap-4">
+        <ProgressRing
+          value={ringPct}
+          size={96}
+          label={<span className="text-atlas-energy text-2xl font-bold">{streak}</span>}
+          sublabel="dias em sequência"
+        />
+        <div className="flex-1">
+          <div className="text-xs uppercase tracking-wider text-atlas-muted">
+            Nível {lvl.level}
+          </div>
+          <div className="text-2xl font-bold">{xp} XP</div>
+          <div className="text-xs text-atlas-muted">
+            {lvl.neededForNext - lvl.intoLevel} XP para o próximo nível
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 atlas-card">
+        <div className="text-xs uppercase tracking-wider text-atlas-muted">
+          Próximo treino
+        </div>
+        <div className="mt-1 flex items-center justify-between">
+          <div>
+            <div className="text-xl font-semibold">
+              {nextWorkout?.name ?? "Nenhum treino atribuído"}
+            </div>
+            <div className="text-xs text-atlas-muted">
+              {nextWorkout?.weekday !== null && nextWorkout?.weekday !== undefined
+                ? ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"][nextWorkout.weekday]
+                : "Sem dia fixo"}
+            </div>
+          </div>
+          {nextWorkout && (
+            <Link
+              href={`/cliente/treinos/${nextWorkout.id}/iniciar`}
+              className="atlas-btn-primary"
+            >
+              <Play size={16} /> Iniciar
+            </Link>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        <div className="atlas-card-muted text-center">
+          <div className="text-xs text-atlas-muted">Sessões</div>
+          <div className="text-xl font-bold">{stats?.total_sessions ?? 0}</div>
+        </div>
+        <div className="atlas-card-muted text-center">
+          <div className="text-xs text-atlas-muted">Maior streak</div>
+          <div className="text-xl font-bold">{stats?.longest_streak ?? 0}</div>
+        </div>
+        <div className="atlas-card-muted text-center">
+          <div className="text-xs text-atlas-muted">Volume 7d</div>
+          <div className="text-xl font-bold">{Math.round(totalVolume)}</div>
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <ActivityDots />
+      </div>
+
+      <div className="mt-4 atlas-card">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-xs uppercase tracking-wider text-atlas-muted">
+              Volume últimos 7 treinos
+            </div>
+            <div className="text-2xl font-bold">{Math.round(totalVolume)} kg</div>
+          </div>
+        </div>
+        <div className="mt-3">
+          <VolumeBars values={bars} highlightIndex={0} />
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="font-semibold flex items-center gap-2">
+            <Trophy className="text-atlas-energy" size={18} /> Últimas medalhas
+          </h2>
+          <Link href="/cliente/conquistas" className="text-xs text-atlas-energy">
+            Ver tudo <ArrowRight size={12} className="inline" />
+          </Link>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {medals.length === 0 && (
+            <div className="col-span-3 atlas-card-muted text-sm text-atlas-muted">
+              Treine pra desbloquear suas primeiras medalhas!
+            </div>
+          )}
+          {medals.map((m) => (
+            <div key={m.id} className="atlas-card-muted text-center">
+              <div className="text-3xl">🏅</div>
+              <div className="text-xs font-medium mt-1">{m.title}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {streak >= 3 && (
+        <div className="mt-4 atlas-card flex items-center gap-3 bg-atlas-energy/10 border-atlas-energy/30">
+          <Flame className="text-atlas-energy" />
+          <div className="text-sm">
+            Você está com <span className="font-bold text-atlas-energy">{streak} dias</span> de sequência. Não pare agora!
+          </div>
+        </div>
+      )}
+    </AppShell>
+  );
+}
