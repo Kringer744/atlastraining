@@ -6,6 +6,7 @@ import { createOwnWorkout, uploadOwnPdf } from "../actions";
 import { Plus, Trash2, Upload, Dumbbell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BodyMuscles } from "@/components/brand/BodyMuscles";
+import { WorkoutSuggestions } from "@/components/app/WorkoutSuggestions";
 
 type Row = {
   name: string;
@@ -25,6 +26,30 @@ export function NovoTreinoEuForm() {
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<Row[]>([{ ...empty }]);
   const [muscles, setMuscles] = useState<string[]>([]);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [weekday, setWeekday] = useState<string>("");
+
+  function applyTemplate(tpl: {
+    name: string;
+    description: string;
+    muscle_groups: string[];
+    exercises: { name: string; sets?: number; reps?: string; rest_seconds?: number; notes?: string }[];
+  }) {
+    setName(tpl.name);
+    setDescription(tpl.description);
+    setMuscles(tpl.muscle_groups);
+    setRows(
+      tpl.exercises.map((e) => ({
+        name: e.name,
+        sets: e.sets ? String(e.sets) : "",
+        reps: e.reps ?? "",
+        load_kg: "",
+        rest_seconds: e.rest_seconds ? String(e.rest_seconds) : "",
+        notes: e.notes ?? "",
+      })),
+    );
+  }
 
   function updateRow(i: number, field: keyof Row, v: string) {
     setRows((r) => r.map((row, idx) => (idx === i ? { ...row, [field]: v } : row)));
@@ -63,9 +88,9 @@ export function NovoTreinoEuForm() {
               start(async () => {
                 setError(null);
                 const res = await createOwnWorkout({
-                  name: String(fd.get("name") ?? ""),
-                  description: String(fd.get("description") ?? "") || null,
-                  weekday: fd.get("weekday") ? Number(fd.get("weekday")) : null,
+                  name,
+                  description: description || null,
+                  weekday: weekday ? Number(weekday) : null,
                   muscle_groups: muscles,
                   exercises: rows.map((r) => ({
                     name: r.name,
@@ -81,10 +106,28 @@ export function NovoTreinoEuForm() {
               });
             }}
           >
-            <input name="name" required placeholder="Nome (Ex: Peito + Tríceps)" className="atlas-input" />
-            <textarea name="description" rows={2} placeholder="Descrição (opcional)" className="atlas-input" />
+            <WorkoutSuggestions onPick={applyTemplate} />
 
-            <select name="weekday" defaultValue="" className="atlas-input">
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              placeholder="Nome (Ex: Peito + Tríceps)"
+              className="atlas-input"
+            />
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={2}
+              placeholder="Descrição (opcional)"
+              className="atlas-input"
+            />
+
+            <select
+              value={weekday}
+              onChange={(e) => setWeekday(e.target.value)}
+              className="atlas-input"
+            >
               <option value="">Sem dia fixo</option>
               {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((d, i) => (
                 <option key={d} value={i}>
