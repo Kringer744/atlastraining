@@ -4,6 +4,7 @@ import { AppShell } from "@/components/app/AppShell";
 import { EuNav } from "@/components/app/EuNav";
 import { WaterTracker } from "@/components/app/WaterTracker";
 import { addWater, setWaterGoal, undoLastWater } from "@/app/cliente/agua/actions";
+import { nocoDateFilter } from "@/lib/utils";
 
 const DEFAULT_GOAL_ML = 2500;
 
@@ -23,7 +24,7 @@ export default async function AguaEu() {
     logged_at: string;
     amount_ml: number;
   }>("water_logs", {
-    where: `(client_id,eq,${session.sub})~and(logged_at,gte,${startOfToday.toISOString()})`,
+    where: `(client_id,eq,${session.sub})~and${nocoDateFilter("logged_at", "gte", startOfToday)}`,
     sort: "-logged_at",
     limit: 50,
   });
@@ -35,7 +36,7 @@ export default async function AguaEu() {
   const { list: weekLogs } = await list<{ logged_at: string; amount_ml: number }>(
     "water_logs",
     {
-      where: `(client_id,eq,${session.sub})~and(logged_at,gte,${sevenAgo.toISOString()})`,
+      where: `(client_id,eq,${session.sub})~and${nocoDateFilter("logged_at", "gte", sevenAgo)}`,
       sort: "logged_at",
       limit: 500,
     },

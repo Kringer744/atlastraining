@@ -3,7 +3,7 @@ import { list } from "@/lib/nocodb/client";
 import { AppShell } from "@/components/app/AppShell";
 import { PersonalNav } from "@/components/app/PersonalNav";
 import { VolumeBars } from "@/components/brand/VolumeBars";
-import { relativeTimePt } from "@/lib/utils";
+import { nocoDateFilter, relativeTimePt } from "@/lib/utils";
 
 export default async function Relatorios() {
   const session = await requireUser();
@@ -17,14 +17,13 @@ export default async function Relatorios() {
 
   const since = new Date();
   since.setDate(since.getDate() - 7);
-  const sinceISO = since.toISOString();
 
   let sessions: any[] = [];
   if (ids.length > 0) {
     const where =
       "(" +
       ids.map((id) => `(client_id,eq,${id})`).join("~or") +
-      `)~and(started_at,gte,${sinceISO})`;
+      `)~and${nocoDateFilter("started_at", "gte", since)}`;
     const r = await list<any>("sessions", { where, sort: "-started_at", limit: 200 });
     sessions = r.list;
   }

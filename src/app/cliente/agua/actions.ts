@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { randomUUID } from "node:crypto";
 import { requireUser } from "@/lib/auth/server";
 import { insert, list, remove, update } from "@/lib/nocodb/client";
+import { nocoDateFilter } from "@/lib/utils";
 
 export async function addWater(amountMl: number): Promise<void> {
   const session = await requireUser();
@@ -24,7 +25,7 @@ export async function undoLastWater(): Promise<void> {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
   const { list: logs } = await list<{ id: string }>("water_logs", {
-    where: `(client_id,eq,${session.sub})~and(logged_at,gte,${todayStart.toISOString()})`,
+    where: `(client_id,eq,${session.sub})~and${nocoDateFilter("logged_at", "gte", todayStart)}`,
     sort: "-logged_at",
     fields: "id",
     limit: 1,
