@@ -10,3 +10,4 @@ out
 .idea
 .vercel
 public/uploads/
+tsconfig.tsbuildinfo
