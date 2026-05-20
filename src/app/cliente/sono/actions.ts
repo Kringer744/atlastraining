@@ -6,11 +6,12 @@ import { requireUser } from "@/lib/auth/server";
 import { insert } from "@/lib/nocodb/client";
 
 export type SleepSummary = {
-  startedAt: string; // ISO
-  endedAt: string;   // ISO
+  startedAt: string;
+  endedAt: string;
   durationMin: number;
   quietMin: number;
   noiseEvents: number;
+  snoreEvents: number;
   peakDb: number;
   qualityScore: number;
   note?: string | null;
@@ -26,6 +27,7 @@ export async function saveSleepSession(s: SleepSummary): Promise<void> {
     duration_min: Math.round(s.durationMin),
     quiet_min: Math.round(s.quietMin),
     noise_events: s.noiseEvents,
+    snore_events: s.snoreEvents,
     peak_db: s.peakDb,
     quality_score: s.qualityScore,
     note: s.note ?? null,

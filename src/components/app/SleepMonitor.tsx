@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Moon, Mic, MicOff, Save, Activity, Volume2, Clock } from "lucide-react";
+import { Moon, Mic, MicOff, Save, Activity, Volume2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { saveSleepSession, type SleepSummary } from "@/app/cliente/sono/actions";
 
-// Threshold de RMS pra classificar segundo:
-//   < 0.005 = silencioso (sono profundo provável)
-//   < 0.025 = ruído leve (respiração / movimento leve)
-//   >= 0.025 = ruído alto (ronco / movimento brusco)
-const QUIET_RMS = 0.005;
-const LOUD_RMS = 0.025;
+const QUIET_RMS = 0.004;
+const LOUD_RMS = 0.022;
+const SNORE_FREQ_MIN_HZ = 80;
+const SNORE_FREQ_MAX_HZ = 350;
+const SNORE_LOW_BAND_RATIO = 0.55;
+const SNORE_MIN_INTERVAL_MS = 1800;
+const SNORE_MAX_INTERVAL_MS = 6500;
+const SNORE_PATTERN_THRESHOLD = 3;
 
 type Phase = "idle" | "recording" | "stopped";
 
@@ -24,6 +26,7 @@ export function SleepMonitor() {
     lightSec: 0,
     loudSec: 0,
     noiseEvents: 0,
+    snoreEvents: 0,
     peakDb: -60,
   });
   const [summary, setSummary] = useState<SleepSummary | null>(null);
@@ -36,7 +39,9 @@ export function SleepMonitor() {
   const rafRef = useRef<number | null>(null);
   const startedAtRef = useRef<Date | null>(null);
   const tickerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastEventTsRef = useRef<number>(0);
+  const lastNoiseTsRef = useRef<number>(0);
+  const lastSnorePulseTsRef = useRef<number>(0);
+  const snoreStreakRef = useRef<number>(0);
   const wakeLockRef = useRef<any>(null);
 
   async function startMonitoring() {
@@ -51,34 +56,39 @@ export function SleepMonitor() {
       audioCtxRef.current = ctx;
       const source = ctx.createMediaStreamSource(stream);
       const analyser = ctx.createAnalyser();
-      analyser.fftSize = 2048;
+      analyser.fftSize = 4096;
+      analyser.smoothingTimeConstant = 0.5;
       source.connect(analyser);
       analyserRef.current = analyser;
 
       startedAtRef.current = new Date();
       setElapsed(0);
-      setStats({ quietSec: 0, lightSec: 0, loudSec: 0, noiseEvents: 0, peakDb: -60 });
+      setStats({ quietSec: 0, lightSec: 0, loudSec: 0, noiseEvents: 0, snoreEvents: 0, peakDb: -60 });
       setSummary(null);
       setPhase("recording");
 
-      // Wake lock pra tela não dormir (iOS 16.4+)
       try {
         wakeLockRef.current = await (navigator as any).wakeLock?.request("screen");
-      } catch {
-        // não bloqueia se falhar
-      }
+      } catch {}
 
-      const buf = new Float32Array(analyser.fftSize);
+      const timeBuf = new Float32Array(analyser.fftSize);
+      const freqBuf = new Float32Array(analyser.frequencyBinCount);
+      const sampleRate = ctx.sampleRate;
+      const binWidth = sampleRate / analyser.fftSize;
+      const lowBinStart = Math.floor(SNORE_FREQ_MIN_HZ / binWidth);
+      const lowBinEnd = Math.floor(SNORE_FREQ_MAX_HZ / binWidth);
+
       let lastSecond = -1;
       let secRmsAcc = 0;
       let secRmsCount = 0;
 
       const loop = () => {
-        analyser.getFloatTimeDomainData(buf);
-        // RMS
-        let sum = 0;
-        for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
-        const rms = Math.sqrt(sum / buf.length);
+        analyser.getFloatTimeDomainData(timeBuf);
+        analyser.getFloatFrequencyData(freqBuf);
+
+        let sumSq = 0;
+        for (let i = 0; i < timeBuf.length; i++) sumSq += timeBuf[i] * timeBuf[i];
+        const rms = Math.sqrt(sumSq / timeBuf.length);
         setCurrentRms(rms);
 
         const now = Date.now();
@@ -89,7 +99,6 @@ export function SleepMonitor() {
         secRmsCount++;
 
         if (elapsedSec !== lastSecond) {
-          // fechou um segundo — classifica
           const avg = secRmsAcc / Math.max(1, secRmsCount);
           const db = rmsToDb(avg);
           setStats((s) => {
@@ -98,10 +107,35 @@ export function SleepMonitor() {
             else if (avg < LOUD_RMS) next.lightSec++;
             else next.loudSec++;
             if (db > next.peakDb) next.peakDb = db;
-            // conta evento de ruído se loud e passaram >5s do último
-            if (avg >= LOUD_RMS && now - lastEventTsRef.current > 5000) {
+
+            if (avg >= LOUD_RMS && now - lastNoiseTsRef.current > 5000) {
               next.noiseEvents++;
-              lastEventTsRef.current = now;
+              lastNoiseTsRef.current = now;
+
+              // Análise de banda pra ronco
+              let lowEnergy = 0;
+              let totalEnergy = 0;
+              for (let i = 0; i < freqBuf.length; i++) {
+                const lin = Math.pow(10, freqBuf[i] / 20);
+                totalEnergy += lin;
+                if (i >= lowBinStart && i <= lowBinEnd) lowEnergy += lin;
+              }
+              const lowRatio = totalEnergy > 0 ? lowEnergy / totalEnergy : 0;
+
+              if (lowRatio >= SNORE_LOW_BAND_RATIO) {
+                const dt = now - lastSnorePulseTsRef.current;
+                if (dt >= SNORE_MIN_INTERVAL_MS && dt <= SNORE_MAX_INTERVAL_MS) {
+                  snoreStreakRef.current++;
+                  if (snoreStreakRef.current === SNORE_PATTERN_THRESHOLD) {
+                    next.snoreEvents++;
+                  }
+                } else {
+                  snoreStreakRef.current = 1;
+                }
+                lastSnorePulseTsRef.current = now;
+              } else {
+                snoreStreakRef.current = 0;
+              }
             }
             return next;
           });
@@ -122,8 +156,7 @@ export function SleepMonitor() {
       }, 1000);
     } catch (e: any) {
       setError(
-        "Não consegui acessar o microfone. " +
-          "No iPhone: Ajustes → Safari → Câmera/Microfone → Permitir.",
+        "Não consegui acessar o microfone. No iPhone: Ajustes → Safari → Microfone → Permitir.",
       );
     }
   }
@@ -132,28 +165,20 @@ export function SleepMonitor() {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     if (tickerRef.current) clearInterval(tickerRef.current);
     streamRef.current?.getTracks().forEach((t) => t.stop());
-    try {
-      await audioCtxRef.current?.close();
-    } catch {
-      // ignore
-    }
-    try {
-      await wakeLockRef.current?.release();
-    } catch {
-      // ignore
-    }
+    try { await audioCtxRef.current?.close(); } catch {}
+    try { await wakeLockRef.current?.release(); } catch {}
     if (!startedAtRef.current) return;
     const startedAt = startedAtRef.current.toISOString();
     const endedAt = new Date().toISOString();
     const durationMin = elapsed / 60;
     const quietMin = stats.quietSec / 60;
-    const score = computeQuality(durationMin, quietMin, stats.noiseEvents, stats.loudSec);
+    const score = computeQuality(
+      durationMin, quietMin, stats.noiseEvents, stats.loudSec, stats.snoreEvents,
+    );
     setSummary({
-      startedAt,
-      endedAt,
-      durationMin,
-      quietMin,
+      startedAt, endedAt, durationMin, quietMin,
       noiseEvents: stats.noiseEvents,
+      snoreEvents: stats.snoreEvents,
       peakDb: stats.peakDb,
       qualityScore: score,
     });
@@ -165,7 +190,7 @@ export function SleepMonitor() {
     setPhase("idle");
     setElapsed(0);
     setCurrentRms(0);
-    setStats({ quietSec: 0, lightSec: 0, loudSec: 0, noiseEvents: 0, peakDb: -60 });
+    setStats({ quietSec: 0, lightSec: 0, loudSec: 0, noiseEvents: 0, snoreEvents: 0, peakDb: -60 });
     setNote("");
   }
 
@@ -187,10 +212,17 @@ export function SleepMonitor() {
     };
   }, []);
 
-  // === RENDER ===
-
   if (phase === "stopped" && summary) {
-    return <SleepSummaryView summary={summary} note={note} setNote={setNote} onSave={persist} onDiscard={discard} pending={pending} />;
+    return (
+      <SleepSummaryView
+        summary={summary}
+        note={note}
+        setNote={setNote}
+        onSave={persist}
+        onDiscard={discard}
+        pending={pending}
+      />
+    );
   }
 
   const dbDisplay = phase === "recording" ? Math.max(-60, rmsToDb(currentRms)) : -60;
@@ -251,17 +283,11 @@ export function SleepMonitor() {
           )}
 
           {phase === "idle" ? (
-            <button
-              onClick={startMonitoring}
-              className="atlas-btn-primary mt-5"
-            >
+            <button onClick={startMonitoring} className="atlas-btn-primary mt-5">
               <Mic size={16} /> Ativar modo soneca
             </button>
           ) : (
-            <button
-              onClick={stopMonitoring}
-              className="atlas-btn-danger mt-5"
-            >
+            <button onClick={stopMonitoring} className="atlas-btn-danger mt-5">
               <MicOff size={16} /> Acordei
             </button>
           )}
@@ -269,9 +295,10 @@ export function SleepMonitor() {
       </div>
 
       {phase === "recording" && (
-        <div className="grid grid-cols-3 gap-2">
-          <StatCell label="Silêncio" value={fmtMin(stats.quietSec)} />
-          <StatCell label="Movimentos" value={String(stats.noiseEvents)} />
+        <div className="grid grid-cols-4 gap-2">
+          <StatCell label="Calmo" value={fmtMin(stats.quietSec)} />
+          <StatCell label="Eventos" value={String(stats.noiseEvents)} />
+          <StatCell label="Roncos" value={String(stats.snoreEvents)} />
           <StatCell label="Pico" value={`${stats.peakDb.toFixed(0)} dB`} />
         </div>
       )}
@@ -284,14 +311,9 @@ export function SleepMonitor() {
 
       <div className="atlas-card-muted text-xs text-atlas-muted space-y-1">
         <div className="font-semibold text-atlas-contrast">Como funciona</div>
-        <p>
-          Atlas usa o microfone só pra medir o <b>volume do ambiente</b> em
-          tempo real — nada de áudio é gravado ou enviado.
-        </p>
-        <p>
-          Deixe o celular <b>perto da cama</b>, carregando. Mantenha o app
-          aberto (a tela pode escurecer).
-        </p>
+        <p>Atlas mede só o <b>volume e a frequência do ambiente</b> — nada de áudio é gravado nem enviado.</p>
+        <p>Para detectar <b>ronco</b>, Atlas analisa pulsos rítmicos em baixa frequência (80-350Hz) que se repetem a cada 2-6s.</p>
+        <p>Deixe o celular <b>perto da cama, carregando</b>. Mantém o app aberto.</p>
       </div>
     </div>
   );
@@ -303,18 +325,13 @@ function StatCell({ label, value }: { label: string; value: string }) {
       <div className="text-[10px] uppercase tracking-wider text-atlas-muted">
         {label}
       </div>
-      <div className="font-bold mt-0.5">{value}</div>
+      <div className="font-bold mt-0.5 text-sm">{value}</div>
     </div>
   );
 }
 
 function SleepSummaryView({
-  summary,
-  note,
-  setNote,
-  onSave,
-  onDiscard,
-  pending,
+  summary, note, setNote, onSave, onDiscard, pending,
 }: {
   summary: SleepSummary;
   note: string;
@@ -336,38 +353,49 @@ function SleepSummaryView({
           }}
         />
         <div className="relative">
-          <div className="text-5xl">🌙</div>
-          <div className="text-[11px] uppercase tracking-[0.25em] text-[#9F94FF] mt-2">
-            Bom dia
-          </div>
+          <div className="text-5xl">{summary.qualityScore >= 70 ? "🌟" : "🌙"}</div>
+          <div className="text-[11px] uppercase tracking-[0.25em] text-[#9F94FF] mt-2">Bom dia</div>
           <div className="text-4xl font-bold mt-1 tabular-nums">
             {h}h {String(m).padStart(2, "0")}
           </div>
-          <div className="text-xs text-atlas-muted mt-1">
-            de monitoramento
-          </div>
+          <div className="text-xs text-atlas-muted mt-1">de monitoramento</div>
           <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-atlas-energy/10 border border-atlas-energy/30">
             <Activity className="text-atlas-energy" size={16} />
             <span className="font-semibold text-atlas-energy">
-              Score: {summary.qualityScore}/100
+              Qualidade: {summary.qualityScore}/100
             </span>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        <StatCell label="Tempo calmo" value={fmtMin(summary.quietMin * 60)} />
-        <StatCell label="Eventos" value={String(summary.noiseEvents)} />
-        <StatCell label="Pico" value={`${summary.peakDb.toFixed(0)} dB`} />
+      <div className="grid grid-cols-2 gap-2">
+        <div className="atlas-card-muted text-center py-3">
+          <div className="text-2xl mb-1">😴</div>
+          <div className="text-[10px] uppercase tracking-wider text-atlas-muted">Tempo calmo</div>
+          <div className="font-bold mt-0.5">{fmtMin(summary.quietMin * 60)}</div>
+        </div>
+        <div className="atlas-card-muted text-center py-3">
+          <div className="text-2xl mb-1">{(summary.snoreEvents ?? 0) >= 3 ? "🐻" : "🤫"}</div>
+          <div className="text-[10px] uppercase tracking-wider text-atlas-muted">Roncos</div>
+          <div className="font-bold mt-0.5">
+            {(summary.snoreEvents ?? 0) > 0 ? `${summary.snoreEvents}` : "nenhum"}
+          </div>
+        </div>
+        <div className="atlas-card-muted text-center py-3">
+          <div className="text-2xl mb-1">🌊</div>
+          <div className="text-[10px] uppercase tracking-wider text-atlas-muted">Movimentos</div>
+          <div className="font-bold mt-0.5">{summary.noiseEvents}</div>
+        </div>
+        <div className="atlas-card-muted text-center py-3">
+          <div className="text-2xl mb-1">📈</div>
+          <div className="text-[10px] uppercase tracking-wider text-atlas-muted">Pico</div>
+          <div className="font-bold mt-0.5">{summary.peakDb.toFixed(0)} dB</div>
+        </div>
       </div>
 
       <div className="atlas-card">
-        <div className="text-[11px] uppercase tracking-wider text-atlas-muted mb-2">
-          Análise
-        </div>
-        <p className="text-sm leading-snug">
-          {sleepInsight(summary)}
-        </p>
+        <div className="text-[11px] uppercase tracking-wider text-atlas-muted mb-2">Análise do Atlas</div>
+        <p className="text-sm leading-snug">{sleepInsight(summary)}</p>
       </div>
 
       <div className="atlas-card">
@@ -384,9 +412,7 @@ function SleepSummaryView({
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <button onClick={onDiscard} className="atlas-btn-ghost">
-          Descartar
-        </button>
+        <button onClick={onDiscard} className="atlas-btn-ghost">Descartar</button>
         <button onClick={onSave} disabled={pending} className="atlas-btn-primary">
           <Save size={16} /> {pending ? "Salvando..." : "Salvar"}
         </button>
@@ -399,48 +425,47 @@ function rmsToDb(rms: number): number {
   if (rms <= 0.00001) return -60;
   return Math.max(-60, 20 * Math.log10(rms));
 }
-
 function fmtMin(seconds: number): string {
   const m = Math.floor(seconds / 60);
   if (m < 60) return `${m}min`;
   return `${Math.floor(m / 60)}h ${m % 60}min`;
 }
-
 function computeQuality(
-  durationMin: number,
-  quietMin: number,
-  noiseEvents: number,
-  loudSec: number,
+  durationMin: number, quietMin: number, noiseEvents: number,
+  loudSec: number, snoreEvents: number,
 ): number {
-  if (durationMin < 30) return Math.round(durationMin); // muito curto
-  const ideal = 8 * 60; // 8h
+  if (durationMin < 30) return Math.round(durationMin);
+  const ideal = 8 * 60;
   const durScore = Math.min(40, (durationMin / ideal) * 40);
   const quietRatio = quietMin / Math.max(1, durationMin);
   const quietScore = quietRatio * 40;
-  const eventPenalty = Math.min(20, noiseEvents * 0.5);
+  const eventPenalty = Math.min(15, noiseEvents * 0.4);
   const loudPenalty = Math.min(10, loudSec / 60);
-  return Math.max(
-    0,
-    Math.min(100, Math.round(durScore + quietScore + 20 - eventPenalty - loudPenalty)),
-  );
+  const snorePenalty = Math.min(15, snoreEvents * 1.5);
+  return Math.max(0, Math.min(100,
+    Math.round(durScore + quietScore + 20 - eventPenalty - loudPenalty - snorePenalty),
+  ));
 }
-
 function sleepInsight(s: SleepSummary): string {
   const lines: string[] = [];
   if (s.durationMin < 6 * 60)
-    lines.push("Sono curto — abaixo de 6h. Tenta dormir mais cedo amanhã.");
+    lines.push("Sono curto — abaixo de 6h. Dorme mais cedo amanhã.");
   else if (s.durationMin >= 7 * 60 && s.durationMin <= 9 * 60)
     lines.push("Duração ideal — entre 7 e 9h.");
   else if (s.durationMin > 9 * 60)
-    lines.push("Sono longo — pode indicar recuperação ativa ou fadiga acumulada.");
+    lines.push("Sono longo — recuperação ativa ou fadiga acumulada.");
 
-  if (s.noiseEvents >= 20) lines.push("Muitos eventos de ruído (>20). Ambiente agitado ou ronco frequente.");
-  else if (s.noiseEvents >= 10) lines.push("Alguns movimentos/ruídos durante a noite.");
-  else lines.push("Ambiente bem calmo — sinal de sono tranquilo.");
+  if ((s.snoreEvents ?? 0) >= 5)
+    lines.push("Vários episódios de ronco — vale dormir de lado e hidratar bem.");
+  else if ((s.snoreEvents ?? 0) >= 1)
+    lines.push("Atlas detectou ronco leve. Pode ser cansaço ou posição.");
 
-  if (s.qualityScore >= 80) lines.push("Score top. Mantém a rotina.");
-  else if (s.qualityScore >= 60) lines.push("Boa noite no geral. Dá pra refinar.");
-  else lines.push("Qualidade abaixo do ideal. Foco em escurecer o quarto, evitar tela antes de dormir e hidratação.");
+  if (s.noiseEvents >= 20) lines.push("Quarto agitado. Tenta blackout e silêncio.");
+  else if (s.noiseEvents >= 10) lines.push("Algumas interrupções durante a noite.");
+
+  if (s.qualityScore >= 80) lines.push("Score top — mantém a rotina.");
+  else if (s.qualityScore >= 60) lines.push("Boa noite no geral.");
+  else lines.push("Qualidade abaixo do ideal. Tela menos antes de dormir.");
 
   return lines.join(" ");
 }

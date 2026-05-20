@@ -6,8 +6,10 @@ import { ClienteNav } from "@/components/app/ClienteNav";
 import { ProgressRing } from "@/components/brand/ProgressRing";
 import { ActivityDots } from "@/components/brand/ActivityDots";
 import { VolumeBars } from "@/components/brand/VolumeBars";
-import { Play, Trophy, Flame, ArrowRight, Droplet, Moon, BarChart3 } from "lucide-react";
+import { Play, Trophy, Flame, ArrowRight, Droplet, Moon, BarChart3, Scale } from "lucide-react";
 import { levelFromXp } from "@/lib/utils";
+import { AtlasCoach } from "@/components/app/AtlasCoach";
+import { atlasCoach } from "@/lib/atlas-coach";
 
 export default async function ClienteHome() {
   const session = await requireUser();
@@ -56,12 +58,49 @@ export default async function ClienteHome() {
   );
   const sessionDates = sessions.map((s) => s.started_at.slice(0, 10));
 
+  const lastMeasure = await list<{ measured_at: string }>("measurements", {
+    where: `(client_id,eq,${session.sub})`,
+    fields: "measured_at",
+    sort: "-measured_at",
+    limit: 1,
+  });
+  const lastMeasureDate = lastMeasure.list[0]?.measured_at ?? null;
+  const daysSinceMeasure = lastMeasureDate
+    ? Math.floor((Date.now() - new Date(lastMeasureDate).getTime()) / (1000 * 60 * 60 * 24))
+    : 999;
+  const needsWeightPrompt = daysSinceMeasure >= 30;
+
+  const greeting = atlasCoach.preWorkout();
+
   return (
     <AppShell
       title={`Olá, ${firstName}`}
       subtitle="Você está indo bem!"
       bottomNav={<ClienteNav />}
     >
+      {needsWeightPrompt && (
+        <Link
+          href="/cliente/evolucao"
+          className="atlas-card mb-3 block bg-atlas-energy/10 border-atlas-energy/40 hover:bg-atlas-energy/15"
+        >
+          <div className="flex items-center gap-3">
+            <Scale className="text-atlas-energy shrink-0" />
+            <div className="flex-1">
+              <div className="font-semibold">Hora de pesar</div>
+              <div className="text-xs text-atlas-muted">
+                {lastMeasureDate
+                  ? `Última medida há ${daysSinceMeasure} dias.`
+                  : "Você nunca registrou seu peso."}{" "}
+                Bora atualizar pra evoluir.
+              </div>
+            </div>
+            <ArrowRight className="text-atlas-energy" size={18} />
+          </div>
+        </Link>
+      )}
+
+      <AtlasCoach message={greeting} variant="energy" className="mb-3" />
+
       <div className="atlas-card flex items-center gap-4">
         <ProgressRing
           value={ringPct}

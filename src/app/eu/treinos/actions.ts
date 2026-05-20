@@ -8,10 +8,12 @@ import {
   findOne,
   insert,
   insertMany,
+  list,
   remove,
   upsertByField,
 } from "@/lib/nocodb/client";
 import { uploadFile } from "@/lib/storage";
+import { detectPRs } from "@/lib/pr-detection";
 
 type ExerciseInput = {
   name: string;
@@ -235,9 +237,51 @@ export async function finishOwnSession(params: {
     }
   }
 
+  // PR detection
+  const prs = await detectPRs({
+    clientId: session.sub,
+    currentSetsFlat: params.sets.map((s) => ({
+      exercise_name: s.exercise_name,
+      load_kg: s.load_kg,
+      reps: s.reps,
+    })),
+    currentSessionId: sessionId,
+  });
+  if (prs.length > 0) {
+    await insert("achievements", {
+      id: randomUUID(),
+      client_id: session.sub,
+      code: `PR_${Date.now()}`,
+      title: `${prs.length} PR${prs.length > 1 ? "s" : ""} hoje`,
+      description: prs.map((p) => `${p.exerciseName}: ${p.loadKg}kg`).join(" · "),
+      unlocked_at: new Date().toISOString(),
+    });
+  }
+
+  // Comparação com último treino do mesmo workout
+  const { list: prevSessions } = await list<{ total_volume_kg: number }>(
+    "sessions",
+    {
+      where: `(client_id,eq,${session.sub})~and(workout_id,eq,${params.workout_id})`,
+      sort: "-started_at",
+      fields: "total_volume_kg",
+      limit: 2,
+    },
+  );
+  const lastVolume = Number(prevSessions[1]?.total_volume_kg ?? 0);
+
   revalidatePath("/eu");
+
+  const q = new URLSearchParams({
+    xp: String(xpEarned),
+    streak: String(streak),
+    volume: String(Math.round(totalVolume)),
+    lastVolume: String(Math.round(lastVolume)),
+    rpe: String(params.perceived_effort),
+    prs: prs.length > 0 ? JSON.stringify(prs) : "",
+  });
   return {
-    redirectTo: `/eu/treinos/${params.workout_id}/concluido?xp=${xpEarned}&streak=${streak}`,
+    redirectTo: `/eu/treinos/${params.workout_id}/concluido?${q.toString()}`,
   };
 }
 
