@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Space_Grotesk } from "next/font/google";
+import { Splash } from "@/components/app/Splash";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -61,6 +62,7 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className="font-sans">
+        <Splash />
         {children}
         <script
           dangerouslySetInnerHTML={{

@@ -2,9 +2,9 @@ import { requireUser } from "@/lib/auth/server";
 import { findById, list } from "@/lib/nocodb/client";
 import { AppShell } from "@/components/app/AppShell";
 import { ClienteNav } from "@/components/app/ClienteNav";
-import { Bell } from "lucide-react";
+import { Bell, CheckCheck } from "lucide-react";
 import { relativeTimePt } from "@/lib/utils";
-import { markRead } from "./actions";
+import { markAllRead, markRead } from "./actions";
 
 export default async function ClienteAvisos() {
   const session = await requireUser();
@@ -44,8 +44,22 @@ export default async function ClienteAvisos() {
     for (const u of r.list) coachById[u.id] = u.full_name ?? "Personal";
   }
 
+  const hasUnread = reminders.some((r) => !r.read_at);
+
   return (
-    <AppShell title="Avisos" bottomNav={<ClienteNav />}>
+    <AppShell
+      title="Avisos"
+      actions={
+        hasUnread ? (
+          <form action={markAllRead}>
+            <button className="atlas-btn-ghost text-xs py-2">
+              <CheckCheck size={14} /> Marcar todas
+            </button>
+          </form>
+        ) : null
+      }
+      bottomNav={<ClienteNav />}
+    >
       <div className="space-y-2">
         {reminders.length === 0 && (
           <div className="atlas-card-muted text-sm text-atlas-muted">

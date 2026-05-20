@@ -64,3 +64,66 @@ body {
   background-image: radial-gradient(circle, rgba(255,255,255,0.16) 1px, transparent 1px);
   background-size: 14px 14px;
 }
+
+/* === Splash === */
+.atlas-splash-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.atlas-splash-logo {
+  animation: splash-pop 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  filter: drop-shadow(0 0 32px rgba(198, 255, 0, 0.45));
+}
+.atlas-splash-glow {
+  position: absolute;
+  inset: -20%;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(198,255,0,0.35), transparent 60%);
+  animation: splash-glow 1.6s ease-out both;
+  z-index: -1;
+}
+.atlas-splash-wordmark {
+  animation: splash-fadeup 0.7s 0.3s ease-out both;
+}
+@keyframes splash-pop {
+  0%   { opacity: 0; transform: scale(0.7) rotate(-6deg); }
+  60%  { opacity: 1; transform: scale(1.05) rotate(0); }
+  100% { transform: scale(1); }
+}
+@keyframes splash-glow {
+  0%   { opacity: 0; transform: scale(0.3); }
+  50%  { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.4); }
+}
+@keyframes splash-fadeup {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* === Page transition === */
+.atlas-page-enter {
+  animation: page-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* === Badge / pulse === */
+.atlas-pulse-dot {
+  position: relative;
+}
+.atlas-pulse-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: #C6FF00;
+  opacity: 0.6;
+  animation: pulse-ring 1.6s ease-out infinite;
+}
+@keyframes pulse-ring {
+  0%   { transform: scale(1);    opacity: 0.6; }
+  100% { transform: scale(2.5);  opacity: 0;   }
+}

@@ -46,9 +46,9 @@ async function nocoFetch<T = any>(
     },
     cache: "no-store",
   });
-  // NocoDB cloud limita req/s — backoff exponencial até 5 tentativas
-  if (res.status === 429 && attempt < 5) {
-    await sleep(300 * Math.pow(2, attempt) + Math.random() * 200);
+  // NocoDB cloud limita req/s — backoff exponencial até 8 tentativas (~30s)
+  if (res.status === 429 && attempt < 8) {
+    await sleep(400 * Math.pow(1.6, attempt) + Math.random() * 300);
     return nocoFetch<T>(path, init, attempt + 1);
   }
   if (!res.ok) {

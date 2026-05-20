@@ -2,18 +2,21 @@ import Link from "next/link";
 import { AtlasLogo } from "@/components/brand/AtlasLogo";
 import { signOutAction } from "@/app/(auth)/actions";
 import { LogOut } from "lucide-react";
+import { NotificationBell } from "./NotificationBell";
 
 export function AppShell({
   title,
   subtitle,
   actions,
   bottomNav,
+  headerExtra,
   children,
 }: {
   title?: string;
   subtitle?: string;
   actions?: React.ReactNode;
   bottomNav?: React.ReactNode;
+  headerExtra?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -22,15 +25,19 @@ export function AppShell({
         <Link href="/app" className="flex items-center gap-3">
           <AtlasLogo size={32} withWordmark />
         </Link>
-        <form action={signOutAction}>
-          <button
-            type="submit"
-            title="Sair"
-            className="rounded-full bg-white/5 border border-white/10 p-2 hover:bg-white/10"
-          >
-            <LogOut size={16} />
-          </button>
-        </form>
+        <div className="flex items-center gap-2">
+          <NotificationBell />
+          {headerExtra}
+          <form action={signOutAction}>
+            <button
+              type="submit"
+              title="Sair"
+              className="rounded-full bg-white/5 border border-white/10 p-2 hover:bg-white/10"
+            >
+              <LogOut size={16} />
+            </button>
+          </form>
+        </div>
       </header>
 
       <div className="px-5 max-w-5xl mx-auto">
@@ -61,29 +68,4 @@ export function AppShell({
   );
 }
 
-import type { LucideIcon } from "lucide-react";
-
-export function BottomNavItem({
-  href,
-  label,
-  icon: Icon,
-  active,
-}: {
-  href: string;
-  label: string;
-  icon: LucideIcon;
-  active?: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      className={
-        "flex flex-col items-center gap-0.5 px-4 py-2 rounded-full text-[11px] " +
-        (active ? "text-atlas-energy" : "text-atlas-muted hover:text-atlas-contrast")
-      }
-    >
-      <Icon size={18} />
-      <span>{label}</span>
-    </Link>
-  );
-}
+export { BottomNavItem } from "./BottomNavItem";

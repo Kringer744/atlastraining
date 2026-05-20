@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { BottomNavItem } from "./AppShell";
+import { BottomNavItem } from "./BottomNavItem";
 import { LayoutGrid, Dumbbell, BarChart3, Trophy, Bell } from "lucide-react";
 
 export function ClienteNav() {

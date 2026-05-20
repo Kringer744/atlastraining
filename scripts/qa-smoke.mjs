@@ -52,6 +52,7 @@ async function postForm(path, fields, cookie) {
 }
 
 async function get(path, cookie) {
+  await new Promise((r) => setTimeout(r, 250));
   return fetch(`${HOST}${path}`, {
     headers: cookie ? { Cookie: cookie } : {},
     redirect: "manual",
