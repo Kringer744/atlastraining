@@ -10,30 +10,57 @@ import { Play, Trophy, Flame, ArrowRight, Droplet, Moon, BarChart3, Scale } from
 import { levelFromXp } from "@/lib/utils";
 import { AtlasCoach } from "@/components/app/AtlasCoach";
 import { atlasCoach } from "@/lib/atlas-coach";
+import { safe, emptyList } from "@/lib/safe";
 
 export default async function ClienteHome() {
   const session = await requireUser();
 
-  const profile = await findById<{ full_name: string | null; created_at: string | null }>("users", session.sub);
-  const stats = await findOne<{
-    xp: number;
-    streak_days: number;
-    longest_streak: number;
-    total_sessions: number;
-  }>("client_stats", { where: `(client_id,eq,${session.sub})` });
-  const workoutsRes = await list<{ id: string; name: string; weekday: number | null }>(
-    "workouts",
-    { where: `(client_id,eq,${session.sub})`, sort: "-created_at", limit: 50 },
+  const profile = await safe(
+    () => findById<{ full_name: string | null; created_at: string | null }>("users", session.sub),
+    null,
+    "cliente:profile",
   );
-  const sessionsRes = await list<{ id: string; started_at: string; total_volume_kg: number }>(
-    "sessions",
-    { where: `(client_id,eq,${session.sub})`, sort: "-started_at", limit: 100 },
+  const stats = await safe(
+    () =>
+      findOne<{
+        xp: number;
+        streak_days: number;
+        longest_streak: number;
+        total_sessions: number;
+      }>("client_stats", { where: `(client_id,eq,${session.sub})` }),
+    null,
+    "cliente:stats",
   );
-  const medalsRes = await list<{ id: string; title: string }>("achievements", {
-    where: `(client_id,eq,${session.sub})`,
-    sort: "-unlocked_at",
-    limit: 3,
-  });
+  const workoutsRes = await safe(
+    () =>
+      list<{ id: string; name: string; weekday: number | null }>("workouts", {
+        where: `(client_id,eq,${session.sub})`,
+        sort: "-created_at",
+        limit: 50,
+      }),
+    emptyList,
+    "cliente:workouts",
+  );
+  const sessionsRes = await safe(
+    () =>
+      list<{ id: string; started_at: string; total_volume_kg: number }>("sessions", {
+        where: `(client_id,eq,${session.sub})`,
+        sort: "-started_at",
+        limit: 100,
+      }),
+    emptyList,
+    "cliente:sessions",
+  );
+  const medalsRes = await safe(
+    () =>
+      list<{ id: string; title: string }>("achievements", {
+        where: `(client_id,eq,${session.sub})`,
+        sort: "-unlocked_at",
+        limit: 3,
+      }),
+    emptyList,
+    "cliente:medals",
+  );
 
   const firstName = (profile?.full_name ?? "Atleta").split(" ")[0];
   const xp = stats?.xp ?? 0;
@@ -58,12 +85,17 @@ export default async function ClienteHome() {
   );
   const sessionDates = sessions.map((s) => s.started_at.slice(0, 10));
 
-  const lastMeasure = await list<{ measured_at: string }>("measurements", {
-    where: `(client_id,eq,${session.sub})`,
-    fields: "measured_at",
-    sort: "-measured_at",
-    limit: 1,
-  });
+  const lastMeasure = await safe(
+    () =>
+      list<{ measured_at: string }>("measurements", {
+        where: `(client_id,eq,${session.sub})`,
+        fields: "measured_at",
+        sort: "-measured_at",
+        limit: 1,
+      }),
+    emptyList,
+    "cliente:lastMeasure",
+  );
   const lastMeasureDate = lastMeasure.list[0]?.measured_at ?? null;
   const daysSinceMeasure = lastMeasureDate
     ? Math.floor((Date.now() - new Date(lastMeasureDate).getTime()) / (1000 * 60 * 60 * 24))

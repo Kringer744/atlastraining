@@ -7,45 +7,74 @@ import { ProgressRing } from "@/components/brand/ProgressRing";
 import { ActivityDots } from "@/components/brand/ActivityDots";
 import { Plus, Users, Dumbbell, Bell, ArrowRight } from "lucide-react";
 import { relativeTimePt } from "@/lib/utils";
+import { safe, emptyList } from "@/lib/safe";
 
 export default async function PersonalHome() {
   const session = await requireUser();
-  const profile = await findById<{ full_name: string | null }>("users", session.sub);
-
-  const clientsCount = await count(
-    "coach_clients",
-    `(coach_id,eq,${session.sub})~and(status,eq,active)`,
+  const profile = await safe(
+    () => findById<{ full_name: string | null }>("users", session.sub),
+    null,
+    "personal:profile",
   );
-  const workoutsCount = await count("workouts", `(coach_id,eq,${session.sub})`);
 
-  // Coleta últimas sessões dos meus alunos
-  const { list: links } = await list<{ client_id: string }>("coach_clients", {
-    where: `(coach_id,eq,${session.sub})`,
-    fields: "client_id",
-    limit: 100,
-  });
-  const clientIds = links.map((l) => l.client_id).filter(Boolean);
+  const clientsCount = await safe(
+    () =>
+      count("coach_clients", `(coach_id,eq,${session.sub})~and(status,eq,active)`),
+    0,
+    "personal:clientsCount",
+  );
+  const workoutsCount = await safe(
+    () => count("workouts", `(coach_id,eq,${session.sub})`),
+    0,
+    "personal:workoutsCount",
+  );
+
+  const linksRes = await safe(
+    () =>
+      list<{ client_id: string }>("coach_clients", {
+        where: `(coach_id,eq,${session.sub})`,
+        fields: "client_id",
+        limit: 100,
+      }),
+    emptyList,
+    "personal:links",
+  );
+  const links = linksRes.list;
+  const clientIds = links.map((l: any) => l.client_id).filter(Boolean) as string[];
 
   let sessions: any[] = [];
   let activityDates: string[] = [];
   if (clientIds.length > 0) {
     const where = clientIds.map((id) => `(client_id,eq,${id})`).join("~or");
-    const r = await list<any>("sessions", { where, sort: "-started_at", limit: 100 });
+    const r = await safe(
+      () => list<any>("sessions", { where, sort: "-started_at", limit: 100 }),
+      emptyList,
+      "personal:sessions",
+    );
     sessions = r.list.slice(0, 5);
     activityDates = r.list.map((s: any) =>
       typeof s.started_at === "string" ? s.started_at.slice(0, 10) : "",
     );
   }
-  const myProfile = await findById<{ created_at: string | null }>("users", session.sub);
+  const myProfile = await safe(
+    () => findById<{ created_at: string | null }>("users", session.sub),
+    null,
+    "personal:myProfile",
+  );
   const clientById: Record<string, string> = {};
   if (sessions.length > 0) {
     const ids = [...new Set(sessions.map((s) => s.client_id))];
     const where = ids.map((id) => `(id,eq,${id})`).join("~or");
-    const r = await list<{ id: string; full_name: string | null }>("users", {
-      where,
-      fields: "id,full_name",
-    });
-    for (const u of r.list) clientById[u.id] = u.full_name ?? "Aluno";
+    const r = await safe(
+      () =>
+        list<{ id: string; full_name: string | null }>("users", {
+          where,
+          fields: "id,full_name",
+        }),
+      emptyList,
+      "personal:clients",
+    );
+    for (const u of r.list as any[]) clientById[u.id] = u.full_name ?? "Aluno";
   }
 
   const firstName = (profile?.full_name ?? "Personal").split(" ")[0];
