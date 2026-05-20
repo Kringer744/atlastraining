@@ -1,6 +1,6 @@
 // Atlas Training — Service Worker
 // VERSION bump a cada deploy quebra o cache do PWA — evita user ver bundle/action ID antigo
-const CACHE = "atlas-v3";
+const CACHE = "atlas-v5";
 const PRECACHE = ["/manifest.webmanifest", "/icons/app-icon.png"];
 
 self.addEventListener("install", (e) => {

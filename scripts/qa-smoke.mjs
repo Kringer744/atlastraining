@@ -247,6 +247,46 @@ for (const p of soloPaths) {
   }
 }
 
+// === 5.5) Concluido com querystring + rotas públicas ===
+console.log("\n=== 5.5) Concluído + públicas ===");
+{
+  const qs = "?xp=120&streak=5&volume=2400&lastVolume=2100&rpe=8&prs=" +
+    encodeURIComponent(JSON.stringify([{exerciseName:"Supino",loadKg:90,previous:85}]));
+  const r = await get(`/cliente/treinos/fake-id/concluido${qs}`, sessions.get("client"));
+  if (r.status === 200) ok("cliente concluido com PRs -> 200");
+  else bad("cliente concluido", `HTTP ${r.status}`);
+}
+{
+  const r = await get(`/eu/treinos/fake-id/concluido?xp=120&streak=5&volume=2400&lastVolume=0&rpe=7&prs=`, sessions.get("solo"));
+  if (r.status === 200) ok("solo concluido sem PRs -> 200");
+  else bad("solo concluido", `HTTP ${r.status}`);
+}
+{
+  const r = await get("/sobre", null);
+  if (r.status === 200) ok("sobre público -> 200");
+  else bad("sobre", `HTTP ${r.status}`);
+}
+{
+  const r = await get("/login", null);
+  if (r.status === 200) ok("login anônimo -> 200");
+  else bad("login", `HTTP ${r.status}`);
+}
+{
+  const r = await get("/signup", null);
+  if (r.status === 200) ok("signup anônimo -> 200");
+  else bad("signup", `HTTP ${r.status}`);
+}
+{
+  const r = await get("/signup?role=personal", null);
+  if (r.status === 200) ok("signup role=personal -> 200");
+  else bad("signup?role=personal", `HTTP ${r.status}`);
+}
+{
+  const r = await get("/api/notifications/unread", sessions.get("client"));
+  if (r.status === 200) ok("api notifications unread -> 200");
+  else bad("api notifications", `HTTP ${r.status}`);
+}
+
 // === 6) Verifica que /personal bloqueia client/solo ===
 console.log("\n=== 6) Guardas de role ===");
 {
