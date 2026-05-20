@@ -6,7 +6,7 @@ import { EuNav } from "@/components/app/EuNav";
 import { ProgressRing } from "@/components/brand/ProgressRing";
 import { ActivityDots } from "@/components/brand/ActivityDots";
 import { VolumeBars } from "@/components/brand/VolumeBars";
-import { Play, Plus, Trophy, Flame, ArrowRight } from "lucide-react";
+import { Play, Plus, Trophy, Flame, ArrowRight, Droplet, Moon, BarChart3 } from "lucide-react";
 import { levelFromXp } from "@/lib/utils";
 
 export default async function EuHome() {
@@ -168,6 +168,29 @@ export default async function EuHome() {
               <div className="text-xs font-medium mt-1">{m.title}</div>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div className="mt-6">
+        <div className="text-[11px] uppercase tracking-[0.25em] text-atlas-energy mb-2">
+          Bem-estar
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <Link href="/eu/agua" className="atlas-card flex flex-col items-start gap-1 hover:border-[#4FC3F7]/40 transition">
+            <Droplet className="text-[#4FC3F7]" />
+            <div className="font-semibold mt-1 text-sm">Hidratação</div>
+            <div className="text-[10px] text-atlas-muted">meta diária</div>
+          </Link>
+          <Link href="/eu/sono" className="atlas-card flex flex-col items-start gap-1 hover:border-[#7B6DFF]/40 transition">
+            <Moon className="text-[#7B6DFF]" />
+            <div className="font-semibold mt-1 text-sm">Sono</div>
+            <div className="text-[10px] text-atlas-muted">modo soneca</div>
+          </Link>
+          <Link href="/eu/evolucao" className="atlas-card flex flex-col items-start gap-1 hover:border-atlas-energy/40 transition">
+            <BarChart3 className="text-atlas-energy" />
+            <div className="font-semibold mt-1 text-sm">Medidas</div>
+            <div className="text-[10px] text-atlas-muted">peso/corpo</div>
+          </Link>
         </div>
       </div>
 

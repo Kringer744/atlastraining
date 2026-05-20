@@ -15,6 +15,8 @@ type Tables = {
   measurements: string;
   client_stats: string;
   achievements: string;
+  water_logs: string;
+  sleep_sessions: string;
 };
 
 function loadTableIds(): Tables {
