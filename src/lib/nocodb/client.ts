@@ -26,6 +26,17 @@ const NC_PK_FIELD = "Id";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+// Cache em memória pra deduplicar GETs idênticos dentro de uma janela curta.
+// Cada page render do Next dispara várias queries — sem cache, todas batem
+// no NocoDB cloud e estouram o rate limit. Com cache de 8s, render compartilhado
+// não bate duas vezes.
+type CacheEntry = { promise: Promise<any>; ts: number };
+const getCache = new Map<string, CacheEntry>();
+const GET_CACHE_TTL_MS = 8000;
+// Cooldown global se NocoDB tá rejeitando — espera todas as requests
+// atuais até cooldownUntil antes de tentar de novo.
+let cooldownUntil = 0;
+
 async function nocoFetch<T = any>(
   path: string,
   init: RequestInit & { query?: Record<string, string | number | undefined> } = {},
@@ -37,26 +48,65 @@ async function nocoFetch<T = any>(
       if (v !== undefined && v !== "") url.searchParams.set(k, String(v));
     }
   }
-  const res = await fetch(url.toString(), {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      "xc-token": PAT,
-      ...(init.headers ?? {}),
-    },
-    cache: "no-store",
-  });
-  // NocoDB cloud limita req/s — backoff exponencial até 8 tentativas (~30s)
-  if (res.status === 429 && attempt < 8) {
-    await sleep(400 * Math.pow(1.6, attempt) + Math.random() * 300);
-    return nocoFetch<T>(path, init, attempt + 1);
+  const method = (init.method ?? "GET").toUpperCase();
+
+  // Cache só pra GET
+  let cacheKey: string | null = null;
+  if (method === "GET") {
+    cacheKey = url.toString();
+    const entry = getCache.get(cacheKey);
+    if (entry && Date.now() - entry.ts < GET_CACHE_TTL_MS) {
+      return entry.promise as Promise<T>;
+    }
   }
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`NocoDB ${res.status} ${res.statusText}: ${text}`);
+
+  // Respeita cooldown global
+  if (Date.now() < cooldownUntil) {
+    await sleep(cooldownUntil - Date.now());
   }
-  if (res.status === 204) return undefined as T;
-  return (await res.json()) as T;
+
+  const promise = (async () => {
+    const res = await fetch(url.toString(), {
+      ...init,
+      headers: {
+        "Content-Type": "application/json",
+        "xc-token": PAT,
+        ...(init.headers ?? {}),
+      },
+      cache: "no-store",
+    });
+    if (res.status === 429 && attempt < 10) {
+      const wait = 500 * Math.pow(1.7, attempt) + Math.random() * 500;
+      // Ativa cooldown global se já estamos batendo retry
+      if (attempt >= 3) cooldownUntil = Date.now() + wait;
+      await sleep(wait);
+      if (cacheKey) getCache.delete(cacheKey); // não cache failed
+      return nocoFetch<T>(path, init, attempt + 1);
+    }
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`NocoDB ${res.status} ${res.statusText}: ${text}`);
+    }
+    if (res.status === 204) return undefined as T;
+    return (await res.json()) as T;
+  })();
+
+  if (cacheKey) {
+    getCache.set(cacheKey, { promise, ts: Date.now() });
+    // limpa entradas velhas opportunisticamente
+    if (getCache.size > 200) {
+      const cutoff = Date.now() - GET_CACHE_TTL_MS;
+      for (const [k, v] of getCache.entries()) {
+        if (v.ts < cutoff) getCache.delete(k);
+      }
+    }
+  }
+  // Em writes, invalida o cache inteiro (estado mudou)
+  if (method !== "GET") {
+    promise.then(() => getCache.clear()).catch(() => getCache.clear());
+  }
+
+  return promise;
 }
 
 function tableId(name: TableName): string {

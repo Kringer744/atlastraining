@@ -27,7 +27,8 @@ export default async function TreinoDetail({
     muscle_groups: string | null;
   }>("workouts", id);
   if (!w) notFound();
-  const muscles = (w.muscle_groups ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const rawMuscles = typeof w.muscle_groups === "string" ? w.muscle_groups : "";
+  const muscles = rawMuscles.split(",").map((s) => s.trim()).filter(Boolean);
 
   const [exsRes, clientUser] = await Promise.all([
     list<{

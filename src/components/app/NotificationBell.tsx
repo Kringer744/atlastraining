@@ -22,7 +22,7 @@ export function NotificationBell() {
       }
     }
     fetchUnread();
-    const t = setInterval(fetchUnread, 30_000); // refresh a cada 30s
+    const t = setInterval(fetchUnread, 60_000); // refresh a cada 60s
     return () => {
       mounted = false;
       clearInterval(t);

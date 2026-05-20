@@ -5,6 +5,7 @@ import { AppShell } from "@/components/app/AppShell";
 import { EuNav } from "@/components/app/EuNav";
 import { Plus, FileText, Play } from "lucide-react";
 import { BodyMuscles, muscleLabels } from "@/components/brand/BodyMuscles";
+import { parseCsv } from "@/lib/utils";
 
 const WD_FULL = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
@@ -25,11 +26,7 @@ export default async function EuTreinos() {
 
   const today = new Date().getDay();
   const todayWorkout = workouts.find((w) => w.weekday === today);
-  const todayMuscles =
-    (todayWorkout?.muscle_groups ?? "")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
+  const todayMuscles = parseCsv(todayWorkout?.muscle_groups);
 
   return (
     <AppShell
@@ -83,10 +80,7 @@ export default async function EuTreinos() {
           </div>
         )}
         {workouts.map((w) => {
-          const muscles = (w.muscle_groups ?? "")
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean);
+          const muscles = parseCsv(w.muscle_groups);
           const isToday = w.weekday === today;
           return (
             <div

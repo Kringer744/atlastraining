@@ -189,6 +189,7 @@ const personalPaths = [
   "/personal/avisos",
   "/personal/avisos/novo",
   "/personal/relatorios",
+  "/personal/ranking",
 ];
 for (const p of personalPaths) {
   try {
@@ -208,6 +209,10 @@ const clientPaths = [
   "/cliente/evolucao",
   "/cliente/conquistas",
   "/cliente/avisos",
+  "/cliente/ascensao",
+  "/cliente/ranking",
+  "/cliente/agua",
+  "/cliente/sono",
 ];
 for (const p of clientPaths) {
   try {
@@ -227,6 +232,10 @@ const soloPaths = [
   "/eu/treinos/novo",
   "/eu/evolucao",
   "/eu/conquistas",
+  "/eu/ascensao",
+  "/eu/ranking",
+  "/eu/agua",
+  "/eu/sono",
 ];
 for (const p of soloPaths) {
   try {

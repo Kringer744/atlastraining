@@ -45,6 +45,13 @@ export function nocoDateTime(d: Date | string): string {
   return `${y}-${M}-${D} ${h}:${m}:${s}`;
 }
 
+// CSV salvo no NocoDB (LongText) -> array de strings limpo.
+// Defensivo: aceita null, undefined, number, etc.
+export function parseCsv(v: unknown): string[] {
+  if (typeof v !== "string") return [];
+  return v.split(",").map((s) => s.trim()).filter(Boolean);
+}
+
 export function levelFromXp(xp: number) {
   // Simple curve: cada nivel exige 250 + (n-1)*150 XP
   let level = 1;
