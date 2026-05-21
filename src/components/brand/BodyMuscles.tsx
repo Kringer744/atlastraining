@@ -2,25 +2,11 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { MUSCLE_GROUPS, type MuscleKey } from "@/lib/muscles";
 
-// Catálogo de grupos musculares — chave usada no banco, label em PT
-export const MUSCLE_GROUPS = [
-  { key: "peito", label: "Peito", side: "front" },
-  { key: "ombros", label: "Ombros", side: "both" },
-  { key: "biceps", label: "Bíceps", side: "front" },
-  { key: "antebraco", label: "Antebraço", side: "both" },
-  { key: "abdomen", label: "Abdômen", side: "front" },
-  { key: "quadriceps", label: "Quadríceps", side: "front" },
-  { key: "panturrilha", label: "Panturrilha", side: "both" },
-  { key: "costas", label: "Costas", side: "back" },
-  { key: "trapezio", label: "Trapézio", side: "back" },
-  { key: "triceps", label: "Tríceps", side: "back" },
-  { key: "lombar", label: "Lombar", side: "back" },
-  { key: "gluteos", label: "Glúteos", side: "back" },
-  { key: "posterior", label: "Posterior", side: "back" },
-] as const;
-
-export type MuscleKey = (typeof MUSCLE_GROUPS)[number]["key"];
+// Re-export pra manter retrocompatível com imports existentes
+export { MUSCLE_GROUPS };
+export type { MuscleKey };
 
 // Silhueta de corpo atlético — viewBox 220x520
 // Outline base + paths individuais por grupo muscular (sobrepostos pra destacar).
@@ -261,8 +247,7 @@ export function BodyMuscles({
   );
 }
 
-export function muscleLabels(keys: string[]): string {
-  const dict: Record<string, string> = {};
-  for (const m of MUSCLE_GROUPS) dict[m.key] = m.label;
-  return keys.map((k) => dict[k] ?? k).join(", ");
-}
+// muscleLabels foi movido pra @/lib/muscles pra poder ser chamado em
+// server components (este arquivo é "use client"). Re-exporta pra
+// retrocompatibilidade.
+export { muscleLabels } from "@/lib/muscles";

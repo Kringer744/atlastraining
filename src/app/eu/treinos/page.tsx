@@ -3,7 +3,8 @@ import { requireUser } from "@/lib/auth/server";
 import { AppShell } from "@/components/app/AppShell";
 import { EuNav } from "@/components/app/EuNav";
 import { Plus, FileText, Play } from "lucide-react";
-import { BodyMuscles, muscleLabels } from "@/components/brand/BodyMuscles";
+import { BodyMuscles } from '@/components/brand/BodyMuscles';
+import { muscleLabels } from '@/lib/muscles';
 import { parseCsv } from "@/lib/utils";
 import { safeList } from "@/lib/safe";
 

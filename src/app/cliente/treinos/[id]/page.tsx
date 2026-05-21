@@ -4,7 +4,8 @@ import { requireUser } from "@/lib/auth/server";
 import { AppShell } from "@/components/app/AppShell";
 import { ClienteNav } from "@/components/app/ClienteNav";
 import { ChevronLeft, Play, FileText } from "lucide-react";
-import { BodyMuscles, muscleLabels } from "@/components/brand/BodyMuscles";
+import { BodyMuscles } from '@/components/brand/BodyMuscles';
+import { muscleLabels } from '@/lib/muscles';
 import { safeList, safeFindById } from "@/lib/safe";
 
 export default async function ClienteTreinoDetail({

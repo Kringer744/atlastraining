@@ -5,7 +5,8 @@ import { AppShell } from "@/components/app/AppShell";
 import { PersonalNav } from "@/components/app/PersonalNav";
 import { deleteWorkout } from "../actions";
 import { ChevronLeft, Trash2, FileText } from "lucide-react";
-import { BodyMuscles, muscleLabels } from "@/components/brand/BodyMuscles";
+import { BodyMuscles } from '@/components/brand/BodyMuscles';
+import { muscleLabels } from '@/lib/muscles';
 import { safeList, safeFindById } from "@/lib/safe";
 
 export default async function TreinoDetail({

@@ -5,7 +5,8 @@ import { AppShell } from "@/components/app/AppShell";
 import { EuNav } from "@/components/app/EuNav";
 import { deleteOwnWorkout } from "../actions";
 import { ChevronLeft, Play, FileText, Trash2 } from "lucide-react";
-import { BodyMuscles, muscleLabels } from "@/components/brand/BodyMuscles";
+import { BodyMuscles } from '@/components/brand/BodyMuscles';
+import { muscleLabels } from '@/lib/muscles';
 import { safeList, safeFindById } from "@/lib/safe";
 
 export default async function EuTreinoDetail({
