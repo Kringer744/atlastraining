@@ -60,7 +60,7 @@ export default async function ClienteAvisos() {
       }
       bottomNav={<ClienteNav />}
     >
-      <div className="space-y-2">
+      <div className="space-y-2 atlas-stagger">
         {reminders.length === 0 && (
           <div className="atlas-card-muted text-sm text-atlas-muted">
             Sem novidades por aqui.

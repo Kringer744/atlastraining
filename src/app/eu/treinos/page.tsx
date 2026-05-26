@@ -60,7 +60,7 @@ export default async function EuTreinos() {
               </p>
               <Link
                 href={`/eu/treinos/${todayWorkout.id}/iniciar`}
-                className="atlas-btn-primary mt-3 inline-flex"
+                className="atlas-btn-primary mt-3 inline-flex atlas-cta-pulse"
               >
                 <Play size={16} /> Iniciar agora
               </Link>
@@ -69,7 +69,7 @@ export default async function EuTreinos() {
         </div>
       )}
 
-      <div className="space-y-2">
+      <div className="space-y-2 atlas-stagger">
         {workouts.length === 0 && (
           <div className="atlas-card text-center text-atlas-muted">
             Você ainda não tem treinos.

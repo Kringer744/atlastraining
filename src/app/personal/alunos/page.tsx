@@ -45,7 +45,7 @@ export default async function AlunosPage() {
       }
       bottomNav={<PersonalNav />}
     >
-      <div className="space-y-2">
+      <div className="space-y-2 atlas-stagger">
         {links.length === 0 && (
           <div className="atlas-card text-center text-atlas-muted">
             Você ainda não tem alunos vinculados.

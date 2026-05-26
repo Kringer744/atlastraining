@@ -41,7 +41,7 @@ export default async function AvisosPage() {
       }
       bottomNav={<PersonalNav />}
     >
-      <div className="space-y-2">
+      <div className="space-y-2 atlas-stagger">
         {reminders.length === 0 && (
           <div className="atlas-card text-center text-atlas-muted">
             Nenhum aviso enviado.

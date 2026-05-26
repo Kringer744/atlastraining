@@ -22,16 +22,21 @@ body {
 
 @layer components {
   .atlas-card {
-    @apply rounded-atlas bg-atlas-focus-2 border border-white/5 p-5;
+    @apply rounded-atlas bg-atlas-focus-2 border border-white/5 p-5 transition-all duration-300;
   }
   .atlas-card-muted {
-    @apply rounded-atlas bg-atlas-balance/60 border border-white/5 p-5;
+    @apply rounded-atlas bg-atlas-balance/60 border border-white/5 p-5 transition-all duration-300;
+  }
+  /* hover sutil em cards clicáveis (a, button, label.atlas-card) */
+  a.atlas-card:hover, button.atlas-card:hover, label.atlas-card:hover {
+    @apply border-white/10 -translate-y-0.5;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(198, 255, 0, 0.1);
   }
   .atlas-btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 font-medium transition active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 font-medium transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none;
   }
   .atlas-btn-primary {
-    @apply atlas-btn bg-atlas-energy text-black hover:bg-atlas-energy-dim shadow-glow;
+    @apply atlas-btn bg-atlas-energy text-black hover:bg-atlas-energy-dim shadow-glow hover:shadow-[0_0_28px_rgba(198,255,0,0.5)];
   }
   .atlas-btn-ghost {
     @apply atlas-btn bg-white/5 text-atlas-contrast hover:bg-white/10 border border-white/10;
@@ -135,4 +140,103 @@ body {
 @keyframes pulse-ring {
   0%   { transform: scale(1);    opacity: 0.6; }
   100% { transform: scale(2.5);  opacity: 0;   }
+}
+
+/* === Stagger reveal de listas === */
+.atlas-stagger > * {
+  opacity: 0;
+  animation: stagger-in 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.atlas-stagger > *:nth-child(1)  { animation-delay: 0ms; }
+.atlas-stagger > *:nth-child(2)  { animation-delay: 50ms; }
+.atlas-stagger > *:nth-child(3)  { animation-delay: 100ms; }
+.atlas-stagger > *:nth-child(4)  { animation-delay: 150ms; }
+.atlas-stagger > *:nth-child(5)  { animation-delay: 200ms; }
+.atlas-stagger > *:nth-child(6)  { animation-delay: 250ms; }
+.atlas-stagger > *:nth-child(7)  { animation-delay: 300ms; }
+.atlas-stagger > *:nth-child(8)  { animation-delay: 350ms; }
+.atlas-stagger > *:nth-child(n+9) { animation-delay: 400ms; }
+@keyframes stagger-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* === Bell ringing (quando tem unread) === */
+.atlas-bell-ring {
+  animation: bell-ring 2.4s ease-in-out infinite;
+  transform-origin: top center;
+}
+@keyframes bell-ring {
+  0%, 6%, 14%, 100% { transform: rotate(0deg); }
+  2% { transform: rotate(-15deg); }
+  4%, 12% { transform: rotate(15deg); }
+  8% { transform: rotate(-15deg); }
+  10% { transform: rotate(15deg); }
+}
+
+/* === Glow pulsante no CTA === */
+.atlas-cta-pulse {
+  animation: cta-pulse 2.4s ease-in-out infinite;
+}
+@keyframes cta-pulse {
+  0%, 100% { box-shadow: 0 0 24px rgba(198, 255, 0, 0.25); }
+  50%      { box-shadow: 0 0 40px rgba(198, 255, 0, 0.55); }
+}
+
+/* === Number flash (quando muda valor) === */
+.atlas-num-flash {
+  animation: num-flash 700ms ease-out;
+}
+@keyframes num-flash {
+  0%   { color: #C6FF00; transform: scale(1.15); text-shadow: 0 0 12px rgba(198,255,0,0.6); }
+  100% { transform: scale(1); }
+}
+
+/* === Skeleton shimmer === */
+.atlas-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255,255,255,0.05);
+}
+.atlas-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(198, 255, 0, 0.08) 50%,
+    transparent 100%
+  );
+  animation: shimmer 1.6s linear infinite;
+}
+@keyframes shimmer {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
+}
+
+/* === Fade-slide right (chips, badges) === */
+.atlas-slide-right {
+  animation: slide-right 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes slide-right {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* === Bounce on appear === */
+.atlas-bounce-in {
+  animation: bounce-in 500ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes bounce-in {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Respeitar prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -38,10 +38,10 @@ export function NotificationBell() {
       title="Avisos"
       className="relative rounded-full bg-white/5 border border-white/10 p-2 hover:bg-white/10 transition"
     >
-      <Bell size={16} />
+      <Bell size={16} className={count > 0 ? "atlas-bell-ring text-atlas-energy" : ""} />
       {count > 0 && (
         <>
-          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-atlas-energy text-black text-[10px] font-bold flex items-center justify-center shadow-glow">
+          <span className="atlas-bounce-in absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-atlas-energy text-black text-[10px] font-bold flex items-center justify-center shadow-glow">
             {count > 9 ? "9+" : count}
           </span>
           <span className="atlas-pulse-dot absolute top-1 right-1 w-2 h-2 rounded-full bg-atlas-energy pointer-events-none" />

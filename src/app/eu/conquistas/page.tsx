@@ -53,7 +53,7 @@ export default async function ConquistasEu() {
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3">
+      <div className="mt-4 grid grid-cols-2 gap-3 atlas-stagger">
         {CATALOG.map((m) => {
           const have = unlocked.has(m.code);
           const meta = medals.find((x) => x.code === m.code);

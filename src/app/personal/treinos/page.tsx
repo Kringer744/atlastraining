@@ -42,7 +42,7 @@ export default async function TreinosList() {
       }
       bottomNav={<PersonalNav />}
     >
-      <div className="space-y-2">
+      <div className="space-y-2 atlas-stagger">
         {workouts.length === 0 && (
           <div className="atlas-card text-center text-atlas-muted">
             Nenhum treino criado.
