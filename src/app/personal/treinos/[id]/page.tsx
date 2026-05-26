@@ -8,6 +8,7 @@ import { ChevronLeft, Trash2, FileText } from "lucide-react";
 import { BodyMuscles } from '@/components/brand/BodyMuscles';
 import { muscleLabels } from '@/lib/muscles';
 import { safeList, safeFindById } from "@/lib/safe";
+import { ExerciseVideo } from "@/components/app/ExerciseVideo";
 
 export default async function TreinoDetail({
   params,
@@ -110,9 +111,9 @@ export default async function TreinoDetail({
             </div>
           )}
           {exs.map((e) => (
-            <div key={e.id} className="atlas-card-muted flex items-center justify-between">
-              <div>
-                <div className="font-medium">{e.name}</div>
+            <div key={e.id} className="atlas-card-muted flex items-center justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="font-medium truncate">{e.name}</div>
                 <div className="text-xs text-atlas-muted">
                   {[
                     e.sets ? `${e.sets} séries` : null,
@@ -124,6 +125,7 @@ export default async function TreinoDetail({
                     .join(" · ")}
                 </div>
               </div>
+              <ExerciseVideo name={e.name} />
             </div>
           ))}
         </div>

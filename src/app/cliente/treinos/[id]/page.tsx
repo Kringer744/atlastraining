@@ -6,6 +6,7 @@ import { ClienteNav } from "@/components/app/ClienteNav";
 import { ChevronLeft, Play, FileText } from "lucide-react";
 import { BodyMuscles } from '@/components/brand/BodyMuscles';
 import { muscleLabels } from '@/lib/muscles';
+import { ExerciseVideo } from "@/components/app/ExerciseVideo";
 import { safeList, safeFindById } from "@/lib/safe";
 
 export default async function ClienteTreinoDetail({
@@ -80,8 +81,11 @@ export default async function ClienteTreinoDetail({
         <div className="mt-4 space-y-2">
           {exs.map((e) => (
             <div key={e.id} className="atlas-card-muted">
-              <div className="font-medium">{e.name}</div>
-              <div className="text-xs text-atlas-muted">
+              <div className="flex items-center justify-between gap-2">
+                <div className="font-medium truncate">{e.name}</div>
+                <ExerciseVideo name={e.name} />
+              </div>
+              <div className="text-xs text-atlas-muted mt-1">
                 {[
                   e.sets ? `${e.sets} séries` : null,
                   e.reps ? `${e.reps} reps` : null,

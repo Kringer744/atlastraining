@@ -34,6 +34,7 @@ const nextConfig = {
           "font-src 'self' data: https://fonts.gstatic.com",
           "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
           "connect-src 'self' https://*.nocodb.com https://*.easypanel.host wss://*.easypanel.host",
+          "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
           "frame-ancestors 'none'",
           "base-uri 'self'",
           "form-action 'self'",

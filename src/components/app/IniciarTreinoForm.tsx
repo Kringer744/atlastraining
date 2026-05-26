@@ -7,6 +7,7 @@ import { Plus, Check, Flame, Timer, SkipForward } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { atlasCoach } from "@/lib/atlas-coach";
 import { AtlasCoach } from "./AtlasCoach";
+import { ExerciseVideo } from "./ExerciseVideo";
 
 type Row = {
   exercise_id: string | null;
@@ -174,11 +175,14 @@ export function IniciarTreinoForm({
 
       {Object.entries(grouped).map(([exerciseName, sets]) => (
         <div key={exerciseName} className="atlas-card">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <div className="font-semibold">{exerciseName || "Exercício livre"}</div>
+          <div className="flex items-center justify-between mb-2 gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <div className="font-semibold truncate">{exerciseName || "Exercício livre"}</div>
+                {exerciseName && <ExerciseVideo name={exerciseName} />}
+              </div>
               {sets[0]?.rest_seconds > 0 && (
-                <div className="text-[10px] text-atlas-muted flex items-center gap-1">
+                <div className="text-[10px] text-atlas-muted flex items-center gap-1 mt-0.5">
                   <Timer size={10} /> Descanso: {sets[0].rest_seconds}s
                 </div>
               )}
