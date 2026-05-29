@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/auth/server";
 import { AppShell } from "@/components/app/AppShell";
 import { PersonalNav } from "@/components/app/PersonalNav";
 import { deleteWorkout } from "../actions";
-import { ChevronLeft, Trash2, FileText } from "lucide-react";
+import { ChevronLeft, Trash2, FileText, Pencil } from "lucide-react";
 import { BodyMuscles } from '@/components/brand/BodyMuscles';
 import { muscleLabels } from '@/lib/muscles';
 import { safeList, safeFindById } from "@/lib/safe";
@@ -72,12 +72,22 @@ export default async function TreinoDetail({
             </div>
             {w.description && <p className="mt-3 text-sm">{w.description}</p>}
           </div>
-          <form action={deleteWorkout}>
-            <input type="hidden" name="id" value={id} />
-            <button className="atlas-btn-danger text-xs py-2">
-              <Trash2 size={14} /> Excluir
-            </button>
-          </form>
+          <div className="flex flex-col gap-2 shrink-0">
+            {w.source !== "pdf" && (
+              <Link
+                href={`/personal/treinos/${id}/editar`}
+                className="atlas-btn-ghost text-xs py-2"
+              >
+                <Pencil size={14} /> Editar
+              </Link>
+            )}
+            <form action={deleteWorkout}>
+              <input type="hidden" name="id" value={id} />
+              <button className="atlas-btn-danger text-xs py-2 w-full">
+                <Trash2 size={14} /> Excluir
+              </button>
+            </form>
+          </div>
         </div>
 
         {w.source === "pdf" && w.pdf_url && (

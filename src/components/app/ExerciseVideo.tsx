@@ -78,43 +78,58 @@ export function ExerciseVideo({
 
       {open && (
         <div
-          className="fixed inset-0 z-[300] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn"
+          className="fixed inset-0 z-[300] bg-black/90 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 animate-fadeIn overscroll-contain"
+          style={{
+            height: "100dvh",
+            paddingTop: "max(env(safe-area-inset-top), 0.5rem)",
+            paddingBottom: "max(env(safe-area-inset-bottom), 0.5rem)",
+          }}
           onClick={() => setOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Vídeo: ${name}`}
         >
           <div
-            className="w-full max-w-3xl"
+            className="w-full max-w-3xl flex flex-col max-h-full"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-atlas-contrast font-semibold truncate pr-3">
+            <div className="flex items-center justify-between mb-2 sm:mb-3 shrink-0">
+              <div className="text-atlas-contrast font-semibold truncate pr-3 text-sm sm:text-base">
                 {name}
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-full bg-white/10 border border-white/20 p-2 text-white hover:bg-white/20"
+                aria-label="Fechar vídeo"
+                className="rounded-full bg-white/10 border border-white/20 p-2 text-white hover:bg-white/20 active:scale-95 transition shrink-0"
               >
-                <X size={16} />
+                <X size={18} />
               </button>
             </div>
-            <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+            <div
+              className="relative w-full bg-black rounded-xl sm:rounded-2xl overflow-hidden border border-white/10 shadow-glow"
+              style={{ aspectRatio: "16 / 9" }}
+            >
               <iframe
-                src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&autoplay=1`}
+                src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&autoplay=1&playsinline=1&fs=1`}
                 title={`Execução: ${name}`}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen; web-share"
                 allowFullScreen
-                className="absolute inset-0 w-full h-full rounded-2xl border border-white/10 shadow-glow"
+                referrerPolicy="strict-origin-when-cross-origin"
+                loading="lazy"
+                className="absolute inset-0 w-full h-full"
               />
             </div>
-            <div className="mt-3 flex items-center justify-between text-xs text-atlas-muted">
-              <span>Vídeo de referência — siga sua técnica.</span>
+            <div className="mt-2 sm:mt-3 flex items-center justify-between gap-2 text-[11px] sm:text-xs text-atlas-muted shrink-0">
+              <span className="truncate">Vídeo de referência — siga sua técnica.</span>
               <a
                 href={`https://www.youtube.com/watch?v=${videoId}`}
                 target="_blank"
                 rel="noreferrer"
-                className="text-atlas-energy inline-flex items-center gap-1 hover:underline"
+                className="text-atlas-energy inline-flex items-center gap-1 hover:underline shrink-0"
+                onClick={(e) => e.stopPropagation()}
               >
-                <ExternalLink size={12} /> abrir no YouTube
+                <ExternalLink size={12} /> YouTube
               </a>
             </div>
           </div>

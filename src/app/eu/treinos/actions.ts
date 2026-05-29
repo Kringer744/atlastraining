@@ -5,11 +5,13 @@ import { redirect } from "next/navigation";
 import { randomUUID } from "node:crypto";
 import { requireUser } from "@/lib/auth/server";
 import {
+  findById,
   findOne,
   insert,
   insertMany,
   list,
   remove,
+  update,
   upsertByField,
 } from "@/lib/nocodb/client";
 import { uploadFile } from "@/lib/storage";
@@ -65,6 +67,67 @@ export async function createOwnWorkout(payload: {
 
   revalidatePath("/eu/treinos");
   return { id };
+}
+
+export async function updateOwnWorkout(payload: {
+  id: string;
+  name: string;
+  description?: string | null;
+  weekday?: number | null;
+  muscle_groups?: string[];
+  exercises: ExerciseInput[];
+}): Promise<{ id?: string; error?: string }> {
+  const session = await requireUser();
+  if (session.role !== "solo") return { error: "Apenas Atlas Pessoal." };
+
+  const existing = await findById<{ coach_id: string; client_id: string; source: string }>(
+    "workouts",
+    payload.id,
+    "coach_id,client_id,source",
+  );
+  if (!existing) return { error: "Treino não encontrado." };
+  if (existing.client_id !== session.sub || existing.coach_id !== session.sub) {
+    return { error: "Sem permissão." };
+  }
+  if (existing.source === "pdf") {
+    return { error: "Treinos enviados via PDF não podem ser editados aqui." };
+  }
+
+  await update("workouts", {
+    id: payload.id,
+    name: payload.name,
+    description: payload.description ?? null,
+    weekday: payload.weekday ?? null,
+    muscle_groups: (payload.muscle_groups ?? []).join(","),
+  });
+
+  const { list: oldExs } = await list<{ id: string }>("workout_exercises", {
+    where: `(workout_id,eq,${payload.id})`,
+    fields: "id",
+    limit: 500,
+  });
+  if (oldExs.length > 0) {
+    await remove("workout_exercises", oldExs.map((e) => e.id));
+  }
+
+  const rows = payload.exercises
+    .filter((e) => e.name.trim())
+    .map((e, i) => ({
+      id: randomUUID(),
+      workout_id: payload.id,
+      position: i,
+      name: e.name,
+      sets: e.sets ?? null,
+      reps: e.reps ?? null,
+      load_kg: e.load_kg ?? null,
+      rest_seconds: e.rest_seconds ?? null,
+      notes: e.notes ?? null,
+    }));
+  if (rows.length > 0) await insertMany("workout_exercises", rows);
+
+  revalidatePath(`/eu/treinos/${payload.id}`);
+  revalidatePath("/eu/treinos");
+  return { id: payload.id };
 }
 
 export async function uploadOwnPdf(

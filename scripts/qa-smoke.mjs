@@ -190,6 +190,7 @@ const personalPaths = [
   "/personal/avisos/novo",
   "/personal/relatorios",
   "/personal/ranking",
+  "/personal/beneficios",
 ];
 for (const p of personalPaths) {
   try {
@@ -213,6 +214,7 @@ const clientPaths = [
   "/cliente/ranking",
   "/cliente/agua",
   "/cliente/sono",
+  "/cliente/beneficios",
 ];
 for (const p of clientPaths) {
   try {
@@ -236,6 +238,7 @@ const soloPaths = [
   "/eu/ranking",
   "/eu/agua",
   "/eu/sono",
+  "/eu/beneficios",
 ];
 for (const p of soloPaths) {
   try {
@@ -370,6 +373,13 @@ ok("adicionou exercício");
   else bad(`personal /personal/treinos/[id]`, `HTTP ${r.status}`);
 }
 
+// página de editar treino do personal
+{
+  const r = await get(`/personal/treinos/${workoutId}/editar`, sessions.get("personal"));
+  if (r.status === 200) ok("personal vê /personal/treinos/[id]/editar");
+  else bad("personal /personal/treinos/[id]/editar", `HTTP ${r.status}`);
+}
+
 // detalhe do aluno
 {
   const r = await get(`/personal/alunos/${client.id}`, sessions.get("personal"));
@@ -424,6 +434,11 @@ await noco("POST", `/api/v2/tables/${TABLE_IDS.workouts}/records`, {
   const r = await get(`/eu/treinos/${soloWorkoutId}`, sessions.get("solo"));
   if (r.status === 200) ok("solo vê detalhe do próprio treino");
   else bad("solo /eu/treinos/[id]", `HTTP ${r.status}`);
+}
+{
+  const r = await get(`/eu/treinos/${soloWorkoutId}/editar`, sessions.get("solo"));
+  if (r.status === 200) ok("solo vê /eu/treinos/[id]/editar");
+  else bad("solo /eu/treinos/[id]/editar", `HTTP ${r.status}`);
 }
 
 // aviso broadcast do personal alcança o cliente

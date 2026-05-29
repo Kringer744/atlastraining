@@ -6,7 +6,7 @@ import { AppShell } from "@/components/app/AppShell";
 import { PersonalNav } from "@/components/app/PersonalNav";
 import { ProgressRing } from "@/components/brand/ProgressRing";
 import { ActivityDots } from "@/components/brand/ActivityDots";
-import { Plus, Users, Dumbbell, Bell, ArrowRight } from "lucide-react";
+import { Plus, Users, Dumbbell, Bell, ArrowRight, Gift } from "lucide-react";
 import { relativeTimePt } from "@/lib/utils";
 
 export default async function PersonalHome() {
@@ -173,6 +173,27 @@ export default async function PersonalHome() {
           <div className="text-xs text-atlas-muted">Lembretes ao aluno</div>
         </Link>
       </div>
+
+      <Link
+        href="/personal/beneficios"
+        className="mt-4 atlas-card flex items-center gap-3 bg-gradient-to-br from-atlas-energy/15 via-atlas-energy/5 to-transparent border-atlas-energy/30 hover:border-atlas-energy/50 transition group"
+      >
+        <div className="w-11 h-11 rounded-2xl bg-atlas-energy/20 border border-atlas-energy/40 flex items-center justify-center shrink-0">
+          <Gift className="text-atlas-energy" size={20} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold text-atlas-contrast flex items-center gap-2">
+            Benefícios Atlas
+            <span className="text-[9px] font-bold uppercase tracking-wider bg-atlas-energy text-atlas-focus-1 px-1.5 py-0.5 rounded-full">
+              novo
+            </span>
+          </div>
+          <div className="text-xs text-atlas-muted">
+            Cupons exclusivos pra compartilhar com seus alunos.
+          </div>
+        </div>
+        <ArrowRight className="text-atlas-energy shrink-0 group-hover:translate-x-1 transition" size={18} />
+      </Link>
     </AppShell>
   );
 }

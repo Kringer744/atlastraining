@@ -7,7 +7,7 @@ import { EuNav } from "@/components/app/EuNav";
 import { ProgressRing } from "@/components/brand/ProgressRing";
 import { ActivityDots } from "@/components/brand/ActivityDots";
 import { VolumeBars } from "@/components/brand/VolumeBars";
-import { Play, Plus, Trophy, Flame, ArrowRight, Droplet, Moon, BarChart3, Scale } from "lucide-react";
+import { Play, Plus, Trophy, Flame, ArrowRight, Droplet, Moon, BarChart3, Scale, Gift } from "lucide-react";
 import { levelFromXp } from "@/lib/utils";
 import { AtlasCoach } from "@/components/app/AtlasCoach";
 import { atlasCoach } from "@/lib/atlas-coach";
@@ -272,6 +272,27 @@ export default async function EuHome() {
           </div>
         </div>
       )}
+
+      <Link
+        href="/eu/beneficios"
+        className="mt-4 atlas-card flex items-center gap-3 bg-gradient-to-br from-atlas-energy/15 via-atlas-energy/5 to-transparent border-atlas-energy/30 hover:border-atlas-energy/50 transition group"
+      >
+        <div className="w-11 h-11 rounded-2xl bg-atlas-energy/20 border border-atlas-energy/40 flex items-center justify-center shrink-0">
+          <Gift className="text-atlas-energy" size={20} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold text-atlas-contrast flex items-center gap-2">
+            Benefícios Atlas
+            <span className="text-[9px] font-bold uppercase tracking-wider bg-atlas-energy text-atlas-focus-1 px-1.5 py-0.5 rounded-full">
+              novo
+            </span>
+          </div>
+          <div className="text-xs text-atlas-muted">
+            Cupons e descontos exclusivos pra quem treina.
+          </div>
+        </div>
+        <ArrowRight className="text-atlas-energy shrink-0 group-hover:translate-x-1 transition" size={18} />
+      </Link>
     </AppShell>
   );
 }

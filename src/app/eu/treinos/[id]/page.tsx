@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/auth/server";
 import { AppShell } from "@/components/app/AppShell";
 import { EuNav } from "@/components/app/EuNav";
 import { deleteOwnWorkout } from "../actions";
-import { ChevronLeft, Play, FileText, Trash2 } from "lucide-react";
+import { ChevronLeft, Play, FileText, Trash2, Pencil } from "lucide-react";
 import { BodyMuscles } from '@/components/brand/BodyMuscles';
 import { muscleLabels } from '@/lib/muscles';
 import { ExerciseVideo } from "@/components/app/ExerciseVideo";
@@ -64,15 +64,22 @@ export default async function EuTreinoDetail({
             </div>
             {w.description && <p className="mt-3 text-sm">{w.description}</p>}
           </div>
-          <form action={deleteOwnWorkout}>
-            <input type="hidden" name="id" value={id} />
-            <button className="atlas-btn-danger text-xs py-2">
-              <Trash2 size={14} /> Excluir
-            </button>
-          </form>
+          <div className="flex flex-col gap-2 shrink-0">
+            {w.source !== "pdf" && (
+              <Link href={`/eu/treinos/${id}/editar`} className="atlas-btn-ghost text-xs py-2">
+                <Pencil size={14} /> Editar
+              </Link>
+            )}
+            <form action={deleteOwnWorkout}>
+              <input type="hidden" name="id" value={id} />
+              <button className="atlas-btn-danger text-xs py-2 w-full">
+                <Trash2 size={14} /> Excluir
+              </button>
+            </form>
+          </div>
         </div>
 
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3 flex gap-2 flex-wrap">
           <Link href={`/eu/treinos/${id}/iniciar`} className="atlas-btn-primary">
             <Play size={16} /> Iniciar treino
           </Link>

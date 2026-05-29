@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createOwnWorkout, uploadOwnPdf } from "../actions";
+import { createOwnWorkout, updateOwnWorkout, uploadOwnPdf } from "../actions";
 import { Plus, Trash2, Upload, Dumbbell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BodyMuscles } from "@/components/brand/BodyMuscles";
@@ -19,16 +19,28 @@ type Row = {
 
 const empty: Row = { name: "", sets: "", reps: "", load_kg: "", rest_seconds: "", notes: "" };
 
-export function NovoTreinoEuForm() {
+export type WorkoutEuInitial = {
+  id: string;
+  name: string;
+  description: string;
+  weekday: string;
+  muscle_groups: string[];
+  exercises: Row[];
+};
+
+export function NovoTreinoEuForm({ initial }: { initial?: WorkoutEuInitial } = {}) {
   const router = useRouter();
+  const isEdit = !!initial?.id;
   const [tab, setTab] = useState<"manual" | "pdf">("manual");
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [rows, setRows] = useState<Row[]>([{ ...empty }]);
-  const [muscles, setMuscles] = useState<string[]>([]);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [weekday, setWeekday] = useState<string>("");
+  const [rows, setRows] = useState<Row[]>(
+    initial?.exercises?.length ? initial.exercises : [{ ...empty }],
+  );
+  const [muscles, setMuscles] = useState<string[]>(initial?.muscle_groups ?? []);
+  const [name, setName] = useState(initial?.name ?? "");
+  const [description, setDescription] = useState(initial?.description ?? "");
+  const [weekday, setWeekday] = useState<string>(initial?.weekday ?? "");
 
   function applyTemplate(tpl: {
     name: string;
@@ -58,26 +70,28 @@ export function NovoTreinoEuForm() {
   return (
     <div className="max-w-2xl">
       <div className="atlas-card mb-4">
-        <div className="grid grid-cols-2 gap-2 mb-4">
-          <button
-            onClick={() => setTab("manual")}
-            className={cn(
-              "atlas-btn-ghost",
-              tab === "manual" && "bg-atlas-energy/15 text-atlas-energy border-atlas-energy/30",
-            )}
-          >
-            <Dumbbell size={16} /> Manual
-          </button>
-          <button
-            onClick={() => setTab("pdf")}
-            className={cn(
-              "atlas-btn-ghost",
-              tab === "pdf" && "bg-atlas-energy/15 text-atlas-energy border-atlas-energy/30",
-            )}
-          >
-            <Upload size={16} /> Enviar PDF
-          </button>
-        </div>
+        {!isEdit && (
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <button
+              onClick={() => setTab("manual")}
+              className={cn(
+                "atlas-btn-ghost",
+                tab === "manual" && "bg-atlas-energy/15 text-atlas-energy border-atlas-energy/30",
+              )}
+            >
+              <Dumbbell size={16} /> Manual
+            </button>
+            <button
+              onClick={() => setTab("pdf")}
+              className={cn(
+                "atlas-btn-ghost",
+                tab === "pdf" && "bg-atlas-energy/15 text-atlas-energy border-atlas-energy/30",
+              )}
+            >
+              <Upload size={16} /> Enviar PDF
+            </button>
+          </div>
+        )}
 
         {tab === "manual" ? (
           <form
@@ -87,7 +101,7 @@ export function NovoTreinoEuForm() {
               const fd = new FormData(e.currentTarget as HTMLFormElement);
               start(async () => {
                 setError(null);
-                const res = await createOwnWorkout({
+                const payload = {
                   name,
                   description: description || null,
                   weekday: weekday ? Number(weekday) : null,
@@ -100,13 +114,19 @@ export function NovoTreinoEuForm() {
                     rest_seconds: r.rest_seconds ? Number(r.rest_seconds) : null,
                     notes: r.notes || null,
                   })),
-                });
+                };
+                const res = isEdit
+                  ? await updateOwnWorkout({ id: initial!.id, ...payload })
+                  : await createOwnWorkout(payload);
                 if (res?.error) setError(res.error);
-                else if (res?.id) router.push(`/eu/treinos/${res.id}`);
+                else if (res?.id) {
+                  router.push(`/eu/treinos/${res.id}`);
+                  router.refresh();
+                }
               });
             }}
           >
-            <WorkoutSuggestions onPick={applyTemplate} />
+            {!isEdit && <WorkoutSuggestions onPick={applyTemplate} />}
 
             <input
               value={name}
@@ -213,7 +233,13 @@ export function NovoTreinoEuForm() {
             )}
 
             <button disabled={pending} className="atlas-btn-primary w-full mt-3">
-              {pending ? "Salvando..." : "Salvar treino"}
+              {pending
+                ? isEdit
+                  ? "Atualizando..."
+                  : "Salvando..."
+                : isEdit
+                  ? "Salvar alterações"
+                  : "Salvar treino"}
             </button>
           </form>
         ) : (
